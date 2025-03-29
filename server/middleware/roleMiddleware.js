@@ -1,13 +1,12 @@
-export const isManager = (req, res, next) => {
-  if (!req.user || (req.user.role !== "manager" && req.user.role !== "admin")) {
-    return res.status(403).json({ message: "Access denied" });
-  }
-  next();
+// File: server/middleware/roleMiddleware.js
+const permit = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (req.user && allowedRoles.includes(req.user.role)) {
+      next();
+    } else {
+      res.status(403).json({ message: "Forbidden: Access is denied" });
+    }
+  };
 };
 
-export const isAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== "admin") {
-    return res.status(403).json({ message: "Access denied" });
-  }
-  next();
-};
+module.exports = { permit };

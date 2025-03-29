@@ -1,74 +1,51 @@
-import bcrypt from "bcryptjs";
+// File: server/controllers/authController.js
 import User from "../models/User.js";
-import { generateToken } from "../utils/generateToken.js";
+import jwt from "jsonwebtoken";
 
-export const register = async (req, res) => {
-  try {
-    let { name, email, phone, password, role } = req.body;
-    email = email.toLowerCase().trim();
-    name = name.trim();
-    phone = phone ? phone.trim() : "";
-    if (
-      !password ||
-      password.length < 6 ||
-      !/[A-Z]/.test(password) ||
-      !/[0-9]/.test(password)
-    ) {
-      return res.status(400).json({
-        message:
-          "Password must be at least 6 characters long, include an uppercase letter and a number.",
-      });
-    }
-    const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res.status(400).json({ message: "User already exists" });
-    const user = new User({
-      name,
-      email,
-      phone,
-      password,
-      role: role || "user",
-    });
-    await user.save();
-    res.status(201).json({ message: "User registered successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
+const generateToken = (id, role) => {
+  return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "1d" });
 };
 
-export const login = async (req, res) => {
+export const registerUser = async (req, res, next) => {
+  const { name, email, password, role } = req.body;
   try {
-    let { email, password, role } = req.body;
-
-    email = email.toLowerCase().trim();
-    password = password.trim();
-
-    // ✅ Find user by email
-    const user = await User.findOne({ email });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(400).json({ message: "Invalid credentials" });
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: "User already exists" });
     }
-
-    // ✅ Ensure role matches the user role in DB
-    if (role && role !== user.role) {
-      return res
-        .status(403)
-        .json({ message: "Role mismatch! Unauthorized login attempt." });
-    }
-
-    // ✅ Generate JWT Token
-    const token = generateToken(user);
-
-    res.json({
-      token,
-      user: {
-        id: user._id,
+    const user = await User.create({ name, email, password, role });
+    if (user) {
+      res.status(201).json({
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
-      },
-    });
+        token: generateToken(user._id, user.role),
+      });
+    } else {
+      res.status(400).json({ message: "Invalid user data" });
+    }
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    next(error);
+  }
+};
+
+export const loginUser = async (req, res, next) => {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (user && (await user.matchPassword(password))) {
+      res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        token: generateToken(user._id, user.role),
+      });
+    } else {
+      res.status(401).json({ message: "Invalid email or password" });
+    }
+  } catch (error) {
+    next(error);
   }
 };
