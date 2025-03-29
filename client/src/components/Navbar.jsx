@@ -13,8 +13,6 @@ const NavBar = () => {
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Car Rental App
         </Typography>
-
-        {/* Public (Not logged in) */}
         {!user && (
           <>
             <Button color="inherit" component={Link} to="/">
@@ -31,8 +29,6 @@ const NavBar = () => {
             </Button>
           </>
         )}
-
-        {/* User Role */}
         {user && user.role === "user" && (
           <>
             <Button color="inherit" component={Link} to="/user/dashboard">
@@ -55,8 +51,6 @@ const NavBar = () => {
             </Button>
           </>
         )}
-
-        {/* Manager Role */}
         {user && user.role === "manager" && (
           <>
             <Button color="inherit" component={Link} to="/manager/dashboard">
@@ -90,8 +84,6 @@ const NavBar = () => {
             </Button>
           </>
         )}
-
-        {/* Boss Role */}
         {user && user.role === "boss" && (
           <>
             <Button color="inherit" component={Link} to="/boss/dashboard">
@@ -115,8 +107,6 @@ const NavBar = () => {
             </Button>
           </>
         )}
-
-        {/* Admin Role */}
         {user && user.role === "admin" && (
           <>
             <Button color="inherit" component={Link} to="/admin/dashboard">

@@ -1,72 +1,87 @@
 // File: client/src/pages/user/CarDetails.jsx
-import React from "react";
-import { useParams } from "react-router-dom";
-import { Box, Typography, Paper, Button } from "@mui/material";
-import { Link } from "react-router-dom";
-
-const dummyCarDetails = {
-  1: {
-    id: 1,
-    manufacturer: "Toyota",
-    model: "Corolla",
-    transmission: "Automatic",
-    seats: 5,
-    pricePerDay: 40,
-    description: "Reliable and fuel efficient.",
-  },
-  2: {
-    id: 2,
-    manufacturer: "Honda",
-    model: "Civic",
-    transmission: "Automatic",
-    seats: 5,
-    pricePerDay: 45,
-    description: "Sporty design with advanced features.",
-  },
-  3: {
-    id: 3,
-    manufacturer: "Ford",
-    model: "Focus",
-    transmission: "Manual",
-    seats: 5,
-    pricePerDay: 38,
-    description: "Efficient and compact car.",
-  },
-};
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import {
+  Box,
+  Typography,
+  Paper,
+  Button,
+  CircularProgress,
+} from "@mui/material";
+import { fetchCarById } from "../../services/carService";
+import { createRental } from "../../services/rentalService";
 
 const CarDetails = () => {
   const { id } = useParams();
-  const car = dummyCarDetails[id];
+  const navigate = useNavigate();
+  const [car, setCar] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [renting, setRenting] = useState(false);
+  const [error, setError] = useState(null);
 
-  if (!car) {
+  useEffect(() => {
+    const getCar = async () => {
+      try {
+        const data = await fetchCarById(id);
+        setCar(data);
+      } catch (err) {
+        setError("Failed to load car details.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    getCar();
+  }, [id]);
+
+  const handleRent = async () => {
+    setRenting(true);
+    try {
+      await createRental({ carId: car.id });
+      navigate("/user/myrentals");
+    } catch (err) {
+      setError("Rental creation failed.");
+    } finally {
+      setRenting(false);
+    }
+  };
+
+  if (loading) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h5">Car not found</Typography>
+      <Box sx={{ p: 3, display: "flex", justifyContent: "center" }}>
+        <CircularProgress />
       </Box>
     );
   }
-
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
   return (
     <Box sx={{ p: 3 }}>
       <Paper sx={{ p: 2 }}>
         <Typography variant="h4" gutterBottom>
           {car.manufacturer} {car.model}
         </Typography>
-        <Typography variant="body1">
-          <strong>Transmission:</strong> {car.transmission}
-        </Typography>
-        <Typography variant="body1">
-          <strong>Seats:</strong> {car.seats}
-        </Typography>
-        <Typography variant="body1">
-          <strong>Price per day:</strong> ${car.pricePerDay}
-        </Typography>
-        <Typography variant="body1" sx={{ mt: 2 }}>
+        <Typography variant="body1" gutterBottom>
           {car.description}
+        </Typography>
+        <Typography variant="body2" gutterBottom>
+          Price per day: ${car.pricePerDay}
         </Typography>
         <Button
           variant="contained"
-          sx={{ mt: 2 }}
+          color="primary"
+          onClick={handleRent}
+          disabled={renting}
+        >
+          {renting ? "Processing..." : "Rent This Car"}
+        </Button>
+        <Button
+          variant="outlined"
+          sx={{ ml: 2 }}
           component={Link}
           to="/user/cars"
         >

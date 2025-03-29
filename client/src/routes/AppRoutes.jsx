@@ -1,8 +1,6 @@
 // File: client/src/routes/AppRoutes.jsx
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
-// Public Pages
 import Home from "../pages/public/Home";
 import About from "../pages/public/About";
 import Login from "../pages/public/Login";
@@ -50,7 +48,7 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected Routes for Users */}
+        {/* User Routes */}
         <Route element={<ProtectedRoute allowedRoles={["user"]} />}>
           <Route path="/user/dashboard" element={<UserDashboard />} />
           <Route path="/user/cars" element={<CarList />} />
@@ -60,7 +58,7 @@ const AppRoutes = () => {
           <Route path="/user/profile" element={<UserProfile />} />
         </Route>
 
-        {/* Protected Routes for Managers */}
+        {/* Manager Routes */}
         <Route element={<ProtectedRoute allowedRoles={["manager"]} />}>
           <Route path="/manager/dashboard" element={<ManagerDashboard />} />
           <Route path="/manager/manage-cars" element={<ManageCars />} />
@@ -70,7 +68,7 @@ const AppRoutes = () => {
           <Route path="/manager/profile" element={<ManagerProfile />} />
         </Route>
 
-        {/* Protected Routes for Boss */}
+        {/* Boss Routes */}
         <Route element={<ProtectedRoute allowedRoles={["boss"]} />}>
           <Route path="/boss/dashboard" element={<BossDashboard />} />
           <Route path="/boss/manage-managers" element={<ManageManagers />} />
@@ -78,7 +76,7 @@ const AppRoutes = () => {
           <Route path="/boss/profile" element={<BossProfile />} />
         </Route>
 
-        {/* Protected Routes for Admin */}
+        {/* Admin Routes */}
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/manage-bosses" element={<ManageBosses />} />
@@ -86,7 +84,7 @@ const AppRoutes = () => {
           <Route path="/admin/profile" element={<AdminProfile />} />
         </Route>
 
-        {/* Fallback Route */}
+        {/* Fallback */}
         <Route path="*" element={<div>404 - Page Not Found</div>} />
       </Routes>
     </BrowserRouter>

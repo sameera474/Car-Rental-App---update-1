@@ -8,8 +8,7 @@ export const loginUser = async (email, password) => {
       email,
       password,
     });
-    // Assume the token is returned in response.data.token
-    setToken(response.data.token);
+    setToken(response.data.token); // Store the JWT token
     return response.data;
   } catch (error) {
     throw error.response.data;
