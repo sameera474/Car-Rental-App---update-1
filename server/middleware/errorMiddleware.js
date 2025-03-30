@@ -1,7 +1,19 @@
-// File: server/middleware/errorMiddleware.js
 export const errorHandler = (err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Server Error" });
-};
+  console.error("Error:", {
+    message: err.message,
+    stack: err.stack,
+    originalError: err.originalError,
+  });
 
-export default errorHandler;
+  const statusCode = err.statusCode || 500;
+  const message = statusCode === 500 ? "Server Error" : err.message;
+
+  res.status(statusCode).json({
+    success: false,
+    message,
+    ...(process.env.NODE_ENV === "development" && {
+      stack: err.stack,
+      details: err.errors,
+    }),
+  });
+};

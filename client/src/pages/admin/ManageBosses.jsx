@@ -1,64 +1,67 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Container,
+  Box,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
+  List,
+  ListItem,
+  ListItemText,
   Button,
 } from "@mui/material";
-import MainLayout from "../../layouts/MainLayout";
-
-// Dummy Data (Replace with API later)
-const bossesData = [{ id: 1, name: "John Smith", email: "john@example.com" }];
+import axiosInstance from "../../services/axiosInstance";
 
 const ManageBosses = () => {
   const [bosses, setBosses] = useState([]);
+  const [newBossEmail, setNewBossEmail] = useState("");
 
   useEffect(() => {
-    // TODO: Fetch from API later
-    setBosses(bossesData);
+    const fetchBosses = async () => {
+      try {
+        const response = await axiosInstance.get("/users/bosses");
+        setBosses(response.data);
+      } catch (error) {
+        console.error("Error fetching bosses:", error);
+      }
+    };
+    fetchBosses();
   }, []);
 
+  const handleAddBoss = async () => {
+    try {
+      await axiosInstance.post("/admin/promote-boss", { email: newBossEmail });
+      setNewBossEmail("");
+      // Refresh list
+    } catch (error) {
+      alert(error.response?.data?.message || "Promotion failed");
+    }
+  };
+
   return (
-    <MainLayout>
-      <Container>
-        <Typography variant="h4" gutterBottom>
-          Manage Bosses
-        </Typography>
-        <Button variant="contained" color="primary" sx={{ mb: 2 }}>
-          Add New Boss
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        Manage Bosses
+      </Typography>
+
+      <Box sx={{ mb: 4 }}>
+        <TextField
+          label="User Email"
+          value={newBossEmail}
+          onChange={(e) => setNewBossEmail(e.target.value)}
+          sx={{ mr: 2 }}
+        />
+        <Button variant="contained" onClick={handleAddBoss}>
+          Promote to Boss
         </Button>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {bosses.map((boss) => (
-                <TableRow key={boss.id}>
-                  <TableCell>{boss.name}</TableCell>
-                  <TableCell>{boss.email}</TableCell>
-                  <TableCell>
-                    <Button variant="outlined" color="error">
-                      Remove
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Container>
-    </MainLayout>
+      </Box>
+
+      <List>
+        {bosses.map((boss) => (
+          <ListItem key={boss._id}>
+            <ListItemText primary={boss.name} secondary={boss.email} />
+            <Button color="error">Demote</Button>
+          </ListItem>
+        ))}
+      </List>
+    </Box>
   );
 };
 

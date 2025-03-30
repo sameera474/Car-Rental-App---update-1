@@ -1,16 +1,21 @@
+// server/routes/rentalRoutes.js
 import express from "express";
+import { protect } from "../middleware/authMiddleware.js";
 import {
   rentCar,
   returnCar,
   getUserRentals,
 } from "../controllers/rentalController.js";
-import { authenticateUser } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// ✅ Secure Rental Routes (Users must be logged in)
-router.post("/rent", authenticateUser, rentCar);
-router.post("/return", authenticateUser, returnCar);
-router.get("/history/:userId", authenticateUser, getUserRentals);
+// POST /api/rentals - Create new rental
+router.post("/", protect, rentCar);
+
+// PUT /api/rentals/:id/return - Return a car
+router.put("/:id/return", protect, returnCar);
+
+// GET /api/rentals/user/:userId - Get user rentals
+router.get("/user/:userId", protect, getUserRentals);
 
 export default router;

@@ -36,6 +36,7 @@ import AdminProfile from "../pages/admin/Profile";
 
 import ProtectedRoute from "./ProtectedRoute";
 import NavBar from "../components/Navbar";
+import ReviewForm from "../../src/components/ReviewForm";
 
 const AppRoutes = () => {
   return (
@@ -47,6 +48,8 @@ const AppRoutes = () => {
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/cars/:id" element={<CarDetails />} />
+        <Route path="/reviews" element={<ReviewForm />} />
 
         {/* User Routes */}
         <Route element={<ProtectedRoute allowedRoles={["user"]} />}>
@@ -56,6 +59,7 @@ const AppRoutes = () => {
           <Route path="/user/myrentals" element={<MyRentals />} />
           <Route path="/user/reviews" element={<ReviewCar />} />
           <Route path="/user/profile" element={<UserProfile />} />
+          <Route path="/user/review/:carId" element={<ReviewForm />} />
         </Route>
 
         {/* Manager Routes */}

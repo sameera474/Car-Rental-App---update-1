@@ -27,9 +27,7 @@ export const protect = async (req, res, next) => {
 export const authorize = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized for this action" });
+      return res.status(403).json({ message: "Unauthorized access" });
     }
     next();
   };

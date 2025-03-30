@@ -1,85 +1,129 @@
+// server/controllers/rentalController.js
 import Rental from "../models/Rental.js";
 import Car from "../models/Car.js";
 
-// ✅ Function to get user rental history
 export const getUserRentals = async (req, res) => {
   try {
-    const rentals = await Rental.find({ user: req.params.userId }).populate(
-      "car"
-    );
+    // Verify user access
+    if (req.params.userId !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized access" });
+    }
+
+    const rentals = await Rental.find({ user: req.params.userId })
+      .populate("car")
+      .sort({ startDate: -1 });
+
     res.json(rentals);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching rental history", error: error.message });
+    console.error("Get rentals error:", error);
+    res.status(500).json({
+      message: "Error fetching rental history",
+      error: error.message,
+    });
   }
 };
 
-// ✅ Function to rent a car
 export const rentCar = async (req, res) => {
   try {
-    const { carId, startDate, endDate, totalCost } = req.body;
+    const { carId, startDate, endDate } = req.body;
+    const userId = req.user.id;
 
-    // ✅ Validate rental dates
-    if (!startDate || !endDate || new Date(startDate) >= new Date(endDate)) {
+    // Validate input
+    if (!carId || !startDate || !endDate) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Date validation
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (start >= end) {
       return res.status(400).json({ message: "Invalid rental dates" });
     }
 
-    // ✅ Check if car exists
-    const car = await Car.findById(carId);
-    if (!car) return res.status(404).json({ message: "Car not found" });
-
-    // ✅ Ensure car is available
-    if (!car.isAvailable) {
-      return res.status(400).json({ message: "Car is not available for rent" });
+    // Find car with lock
+    const car = await Car.findOne({ _id: carId, isAvailable: true });
+    if (!car) {
+      return res.status(404).json({ message: "Car not available" });
     }
 
-    // ✅ Create new rental entry
-    const newRental = new Rental({
-      user: req.user.userId,
-      car: carId,
-      startDate,
-      endDate,
-      totalCost,
-      status: "active",
-    });
+    // Calculate duration
+    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    const totalCost = days * car.pricePerDay;
 
-    // ✅ Update car availability
-    car.isAvailable = false;
-    await car.save();
-    await newRental.save();
+    // Create transaction
+    const session = await Rental.startSession();
+    session.startTransaction();
 
-    res
-      .status(201)
-      .json({ message: "Car rented successfully", rental: newRental });
+    try {
+      // Create rental
+      const newRental = await Rental.create(
+        [
+          {
+            user: userId,
+            car: carId,
+            startDate: start,
+            endDate: end,
+            totalCost,
+            status: "active",
+          },
+        ],
+        { session }
+      );
+
+      // Update car availability
+      await Car.findByIdAndUpdate(carId, { isAvailable: false }, { session });
+
+      await session.commitTransaction();
+      res.status(201).json(newRental[0]);
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error processing rental", error: error.message });
+    console.error("Rent car error:", error);
+    res.status(500).json({
+      message: error.message || "Error processing rental",
+    });
   }
 };
 
-// ✅ Function to return a car
 export const returnCar = async (req, res) => {
+  const session = await Rental.startSession();
+  session.startTransaction();
+
   try {
-    const rental = await Rental.findById(req.body.rentalId).populate("car");
-    if (!rental) return res.status(404).json({ message: "Rental not found" });
+    const { id } = req.params;
+    const userId = req.user.id;
 
-    // ✅ Mark rental as completed
-    rental.status = "completed";
-    await rental.save();
+    const rental = await Rental.findOneAndUpdate(
+      { _id: id, user: userId, status: "active" },
+      { status: "completed" },
+      { new: true, session }
+    ).populate("car");
 
-    // ✅ Mark car as available again
-    const car = await Car.findById(rental.car._id);
-    if (car) {
-      car.isAvailable = true;
-      await car.save();
+    if (!rental) {
+      return res.status(404).json({ message: "Active rental not found" });
     }
 
-    res.json({ message: "Car returned successfully", rental });
+    await Car.findByIdAndUpdate(
+      rental.car._id,
+      { isAvailable: true },
+      { session }
+    );
+
+    await session.commitTransaction();
+    res.json({
+      message: "Car returned successfully",
+      carId: rental.car._id, // Ensure correct field name
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error processing return", error: error.message });
+    await session.abortTransaction();
+    res.status(500).json({
+      message: error.message || "Error processing return",
+    });
+  } finally {
+    session.endSession();
   }
 };

@@ -4,134 +4,116 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 
-// ✅ Set Up Multer Storage for Image Uploads
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadDir = path.join(__dirname, "../uploads");
+
+// Create uploads directory if not exists
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`);
   },
 });
 
-export const upload = multer({ storage }).single("image");
+export const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+}).single("image");
 
-// ✅ Add a New Car (With Image Upload)
 export const addCar = async (req, res) => {
   try {
-    console.log("Incoming Car Data:", req.body);
-    console.log("Uploaded File:", req.file);
+    const { body, file } = req;
+    const requiredFields = ["brand", "model", "year", "pricePerDay"];
+    const missingFields = requiredFields.filter((field) => !body[field]);
 
-    const {
-      brand,
-      model,
-      year,
-      pricePerDay,
-      location,
-      seats,
-      doors,
-      power,
-      luggage,
-      transmission,
-      kwPower,
-      co2Emission,
-      minAge,
-    } = req.body;
-
-    if (!brand || !model || !pricePerDay || !year) {
-      return res.status(400).json({ message: "Missing required fields" });
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        message: `Missing required fields: ${missingFields.join(", ")}`,
+      });
     }
 
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : "";
-
-    const newCar = new Car({
-      brand,
-      model,
-      year,
-      seats,
-      doors,
-      power,
-      luggage,
-      transmission,
-      kwPower,
-      co2Emission,
-      minAge,
-      pricePerDay,
-      location,
-      image: imageUrl,
+    const carData = {
+      ...body,
+      image: file ? `/uploads/${file.filename}` : "",
+      year: parseInt(body.year),
+      pricePerDay: parseFloat(body.pricePerDay),
       isAvailable: true,
-      protection: {
-        basic: true,
-        excess: "€950.00",
-        collisionDamage: true,
-        theftProtection: true,
-        upgradeAvailable: true,
-      },
-    });
+    };
 
-    await newCar.save();
+    const newCar = await Car.create(carData);
     res.status(201).json(newCar);
   } catch (error) {
     console.error("Error adding car:", error);
-    res.status(500).json({ message: "Error adding car" });
+    res.status(500).json({ message: "Error adding car", error: error.message });
   }
 };
 
-// ✅ Update Car Details
 export const updateCar = async (req, res) => {
   try {
     const updatedCar = await Car.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
+      runValidators: true,
     });
+
     if (!updatedCar) {
       return res.status(404).json({ message: "Car not found" });
     }
     res.json(updatedCar);
   } catch (error) {
-    res.status(500).json({ message: "Error updating car" });
+    res
+      .status(500)
+      .json({ message: "Error updating car", error: error.message });
   }
 };
 
-// ✅ Get All Cars
 export const getAllCars = async (req, res) => {
   try {
-    const cars = await Car.find();
+    const cars = await Car.find().sort({ createdAt: -1 });
     res.json(cars);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching cars" });
+    res
+      .status(500)
+      .json({ message: "Error fetching cars", error: error.message });
   }
 };
 
-// ✅ Get Available Cars
 export const getAvailableCars = async (req, res) => {
   try {
     const cars = await Car.find({ isAvailable: true });
     res.json(cars);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching available cars" });
+    res
+      .status(500)
+      .json({ message: "Error fetching available cars", error: error.message });
   }
 };
 
-// ✅ Delete Car
 export const deleteCar = async (req, res) => {
   try {
-    const deletedCar = await Car.findByIdAndDelete(req.params.id);
-    if (!deletedCar) {
+    const car = await Car.findByIdAndDelete(req.params.id);
+    if (!car) {
       return res.status(404).json({ message: "Car not found" });
     }
+
+    if (car.image) {
+      const imagePath = path.join(uploadDir, car.image.split("/uploads/")[1]);
+      fs.unlinkSync(imagePath);
+    }
+
     res.json({ message: "Car deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Error deleting car" });
+    res
+      .status(500)
+      .json({ message: "Error deleting car", error: error.message });
   }
 };
 
-// ✅ Get a Single Car by ID
 export const getCarById = async (req, res) => {
   try {
     const car = await Car.findById(req.params.id);
@@ -140,7 +122,8 @@ export const getCarById = async (req, res) => {
     }
     res.json(car);
   } catch (error) {
-    console.error("Error fetching car:", error);
-    res.status(500).json({ message: "Error fetching car" });
+    res
+      .status(500)
+      .json({ message: "Error fetching car", error: error.message });
   }
 };
