@@ -1,12 +1,26 @@
-// File: client/src/utils/token.js
 export const setToken = (token) => {
-  localStorage.setItem("token", token);
+  try {
+    localStorage.setItem("authToken", token);
+  } catch (error) {
+    console.error("Error saving token:", error);
+    throw new Error("Failed to save authentication token");
+  }
 };
 
 export const getToken = () => {
-  return localStorage.getItem("token");
+  try {
+    return localStorage.getItem("authToken");
+  } catch (error) {
+    console.error("Error retrieving token:", error);
+    return null;
+  }
 };
 
 export const removeToken = () => {
-  localStorage.removeItem("token");
+  try {
+    localStorage.removeItem("authToken");
+  } catch (error) {
+    console.error("Error removing token:", error);
+    throw new Error("Failed to remove authentication token");
+  }
 };

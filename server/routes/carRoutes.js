@@ -1,4 +1,6 @@
+// File: server/routes/carRoutes.js
 import express from "express";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 import {
   getAllCars,
   getAvailableCars,
@@ -6,39 +8,18 @@ import {
   addCar,
   updateCar,
   deleteCar,
-  upload,
 } from "../controllers/carController.js";
-import {
-  authenticateUser,
-  authorizeRole,
-} from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// ✅ Public Routes (No Authentication Needed)
+// Public routes
 router.get("/", getAllCars);
 router.get("/available", getAvailableCars);
 router.get("/:id", getCarById);
 
-// ✅ Restricted Routes (Only Managers & Admins)
-router.post(
-  "/",
-  authenticateUser,
-  authorizeRole(["manager", "admin"]),
-  upload, // ✅ Ensures Image Upload Works
-  addCar
-);
-router.put(
-  "/:id",
-  authenticateUser,
-  authorizeRole(["manager", "admin"]),
-  updateCar
-);
-router.delete(
-  "/:id",
-  authenticateUser,
-  authorizeRole(["manager", "admin"]),
-  deleteCar
-);
+// Protected routes
+router.post("/", protect, authorize("manager", "admin"), addCar);
+router.put("/:id", protect, authorize("manager", "admin"), updateCar);
+router.delete("/:id", protect, authorize("manager", "admin"), deleteCar);
 
 export default router;
