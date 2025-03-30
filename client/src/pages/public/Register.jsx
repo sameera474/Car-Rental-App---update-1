@@ -1,7 +1,8 @@
 // File: client/src/pages/public/Register.jsx
 import React, { useState } from "react";
-import { Box, Typography, TextField, Button, MenuItem } from "@mui/material";
+import { TextField, Button, Box, Typography, MenuItem } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { registerUser } from "../../services/authService";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -10,29 +11,40 @@ const Register = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "user", // default role
+    role: "user",
   });
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
 
-    // Basic validation: check if password and confirm password match.
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
+      setLoading(false);
       return;
     }
 
-    // For demonstration purposes, simulate registration.
-    // In a production app, you would send a request to your backend API here.
-    console.log("Registration successful", formData);
+    try {
+      await registerUser({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+      });
 
-    // Redirect to login page after successful registration.
-    navigate("/login");
+      navigate("/login");
+    } catch (err) {
+      setError(err.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -86,8 +98,6 @@ const Register = () => {
           onChange={handleChange}
           required
         />
-        {/* Role selection for demonstration purposes.
-            Typically, registration would assign a default role (e.g., 'user'). */}
         <TextField
           fullWidth
           margin="normal"
@@ -96,26 +106,29 @@ const Register = () => {
           name="role"
           value={formData.role}
           onChange={handleChange}
-          helperText="Select your role (for demo purposes)"
+          helperText="Select your role"
         >
           <MenuItem value="user">User</MenuItem>
           <MenuItem value="manager">Manager</MenuItem>
           <MenuItem value="boss">Boss</MenuItem>
           <MenuItem value="admin">Admin</MenuItem>
         </TextField>
+
         {error && (
-          <Typography color="error" variant="body2">
+          <Typography color="error" variant="body2" sx={{ mt: 1 }}>
             {error}
           </Typography>
         )}
+
         <Button
           type="submit"
           variant="contained"
           color="primary"
           fullWidth
+          disabled={loading}
           sx={{ marginTop: "16px" }}
         >
-          Register
+          {loading ? "Registering..." : "Register"}
         </Button>
       </Box>
     </Box>

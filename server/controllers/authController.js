@@ -1,5 +1,7 @@
+// File: server/controllers/authController.js
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -16,15 +18,11 @@ export const registerUser = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
+    // Remove manual hashing
     const user = await User.create({
       name,
       email,
-      password,
+      password, // Save plain password
       role: role || "user",
     });
 
@@ -43,12 +41,21 @@ export const registerUser = async (req, res, next) => {
 export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
 
-    if (!user || !(await user.matchPassword(password))) {
+    // Find user and select password explicitly
+    const user = await User.findOne({ email }).select("+password");
+
+    if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    // Compare passwords using bcrypt
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Return user data with token
     res.json({
       _id: user._id,
       name: user.name,
@@ -57,6 +64,7 @@ export const loginUser = async (req, res, next) => {
       token: generateToken(user),
     });
   } catch (error) {
-    next(error);
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

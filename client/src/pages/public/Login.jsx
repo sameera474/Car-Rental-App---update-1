@@ -23,29 +23,38 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { token, ...userData } = await loginUser(
-        formData.email,
-        formData.password
-      );
-      await login(userData, token);
+      const response = await loginUser(formData.email, formData.password);
 
-      // Navigation based on role
-      const targetPath =
+      // Ensure response contains token and user data
+      if (!response.token) {
+        throw new Error("Invalid server response");
+      }
+
+      // Pass both user data and token
+      login(
         {
-          user: "/user/dashboard",
-          manager: "/manager/dashboard",
-          boss: "/boss/dashboard",
-          admin: "/admin/dashboard",
-        }[userData.role] || "/";
+          id: response._id,
+          name: response.name,
+          email: response.email,
+          role: response.role,
+        },
+        response.token
+      );
 
-      navigate(targetPath);
+      // Navigate based on role
+      const targetPaths = {
+        user: "/user/dashboard",
+        manager: "/manager/dashboard",
+        boss: "/boss/dashboard",
+        admin: "/admin/dashboard",
+      };
+      navigate(targetPaths[response.role] || "/");
     } catch (err) {
-      setError(err.message || "Login failed");
+      setError(err.message || "Login failed. Check your credentials.");
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <Box
       display="flex"

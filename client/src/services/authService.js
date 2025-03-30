@@ -1,16 +1,25 @@
 // File: client/src/services/authService.js
 import axiosInstance from "./axiosInstance";
-import { setToken } from "../utils/token";
 
+// File: client/src/services/authService.js
 export const loginUser = async (email, password) => {
   try {
     const response = await axiosInstance.post("/auth/login", {
       email,
       password,
     });
-    return response.data; // Should return { token, ...userData }
+
+    if (!response.data.token) {
+      throw new Error("Authentication token missing");
+    }
+
+    return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw new Error(
+      error.response?.data?.message ||
+        error.message ||
+        "Login failed. Please try again."
+    );
   }
 };
 
@@ -19,6 +28,6 @@ export const registerUser = async (userData) => {
     const response = await axiosInstance.post("/auth/register", userData);
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw new Error(error.response?.data?.message || "Registration failed");
   }
 };
