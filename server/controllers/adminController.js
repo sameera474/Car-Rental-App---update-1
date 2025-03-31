@@ -1,38 +1,68 @@
-// File: server/controllers/adminController.js
 import Rental from "../models/Rental.js";
 import User from "../models/User.js";
+import Car from "../models/Car.js";
+import Review from "../models/Review.js";
 
-export const getFinancialReport = async (req, res) => {
-  /* your code */
-};
-
-export const manageManagers = async (req, res) => {
-  /* your code */
-};
-
-// Add these missing controller functions
-export const resetSystem = async (req, res) => {
+// Get all bosses
+export const getBosses = async (req, res) => {
   try {
-    // Add your reset logic here
-    await Rental.deleteMany();
-    await User.deleteMany({ role: { $ne: "admin" } });
-    res.json({ message: "System reset successfully" });
+    const bosses = await User.find({ role: "boss" }).select("-password");
+    res.json(bosses);
   } catch (error) {
-    res.status(500).json({ message: "Reset failed" });
+    res.status(500).json({ message: "Error fetching bosses" });
   }
 };
 
-export const manageBosses = async (req, res) => {
+// Promote user to boss
+export const promoteToBoss = async (req, res) => {
   try {
-    // Add boss management logic
-    const { email } = req.body;
     const user = await User.findOneAndUpdate(
-      { email },
+      { email: req.body.email },
       { role: "boss" },
       { new: true }
-    );
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: "Boss management failed" });
+    res.status(500).json({ message: "Promotion failed" });
+  }
+};
+
+// Demote boss to user
+export const demoteBoss = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role: "user" },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Demotion failed" });
+  }
+};
+
+// Full system reset
+export const resetSystem = async (req, res) => {
+  try {
+    await Promise.all([
+      Rental.deleteMany(),
+      Car.deleteMany(),
+      Review.deleteMany(),
+      User.deleteMany({ role: { $nin: ["admin"] } }),
+    ]);
+
+    res.json({ message: "System reset successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Reset failed" });
   }
 };
