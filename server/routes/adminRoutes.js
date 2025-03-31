@@ -1,18 +1,30 @@
+// File: server/routes/adminRoutes.js
 import express from "express";
-import { addStaff } from "../controllers/adminController.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 import {
-  authenticateUser,
-  authorizeRole,
-} from "../middleware/authMiddleware.js";
+  getFinancialReport,
+  manageManagers,
+  resetSystem,
+  manageBosses,
+} from "../controllers/adminController.js";
 
 const router = express.Router();
 
-// ✅ Only Admin or Boss can add staff
-router.post(
-  "/add-staff",
-  authenticateUser,
-  authorizeRole(["admin", "boss"]),
-  addStaff
+// Financial Report
+router.get(
+  "/financial-report",
+  protect,
+  authorize("admin", "boss"),
+  getFinancialReport
 );
+
+// Manager Management
+router.post("/manage-managers", protect, authorize("boss"), manageManagers);
+
+// Boss Management
+router.post("/bosses", protect, authorize("admin"), manageBosses);
+
+// System Reset
+router.post("/reset-system", protect, authorize("admin"), resetSystem);
 
 export default router;

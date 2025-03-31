@@ -1,26 +1,38 @@
+// File: server/controllers/adminController.js
+import Rental from "../models/Rental.js";
 import User from "../models/User.js";
-import bcrypt from "bcryptjs";
 
-// ✅ Add Staff (Admin/Boss Only)
-export const addStaff = async (req, res) => {
+export const getFinancialReport = async (req, res) => {
+  /* your code */
+};
+
+export const manageManagers = async (req, res) => {
+  /* your code */
+};
+
+// Add these missing controller functions
+export const resetSystem = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-
-    // ✅ Check if user exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    // ✅ Hash Password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // ✅ Create New User
-    const user = new User({ name, email, password: hashedPassword, role });
-    await user.save();
-
-    res.status(201).json({ message: "Staff registered successfully" });
+    // Add your reset logic here
+    await Rental.deleteMany();
+    await User.deleteMany({ role: { $ne: "admin" } });
+    res.json({ message: "System reset successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Reset failed" });
+  }
+};
+
+export const manageBosses = async (req, res) => {
+  try {
+    // Add boss management logic
+    const { email } = req.body;
+    const user = await User.findOneAndUpdate(
+      { email },
+      { role: "boss" },
+      { new: true }
+    );
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Boss management failed" });
   }
 };

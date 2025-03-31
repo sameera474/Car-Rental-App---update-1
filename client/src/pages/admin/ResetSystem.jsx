@@ -1,5 +1,5 @@
 // File: client/src/pages/admin/ResetSystem.jsx
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -9,14 +9,21 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
+import axiosInstance from "../../services/axiosInstance";
 
 const ResetSystem = () => {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
-  const handleReset = () => {
-    // Add reset logic here (e.g., API call to reset the system)
-    console.log("System reset initiated");
-    setOpen(false);
+  const handleReset = async () => {
+    try {
+      await axiosInstance.post("/admin/reset-system");
+      alert("System reset successfully!");
+      window.location.reload();
+    } catch (error) {
+      alert(error.response?.data?.message || "Reset failed");
+    } finally {
+      setOpen(false);
+    }
   };
 
   return (

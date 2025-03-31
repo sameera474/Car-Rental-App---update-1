@@ -1,3 +1,4 @@
+// File: client/src/pages/admin/ManageBosses.jsx
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -6,6 +7,7 @@ import {
   ListItem,
   ListItemText,
   Button,
+  TextField,
 } from "@mui/material";
 import axiosInstance from "../../services/axiosInstance";
 
@@ -16,7 +18,7 @@ const ManageBosses = () => {
   useEffect(() => {
     const fetchBosses = async () => {
       try {
-        const response = await axiosInstance.get("/users/bosses");
+        const response = await axiosInstance.get("/admin/bosses");
         setBosses(response.data);
       } catch (error) {
         console.error("Error fetching bosses:", error);
@@ -27,11 +29,22 @@ const ManageBosses = () => {
 
   const handleAddBoss = async () => {
     try {
-      await axiosInstance.post("/admin/promote-boss", { email: newBossEmail });
+      await axiosInstance.post("/admin/bosses", { email: newBossEmail });
+      const response = await axiosInstance.get("/admin/bosses");
+      setBosses(response.data);
       setNewBossEmail("");
-      // Refresh list
     } catch (error) {
-      alert(error.response?.data?.message || "Promotion failed");
+      alert(error.response?.data?.message || "Operation failed");
+    }
+  };
+
+  const handleDemote = async (userId) => {
+    try {
+      await axiosInstance.delete(`/admin/bosses/${userId}`);
+      const response = await axiosInstance.get("/admin/bosses");
+      setBosses(response.data);
+    } catch (error) {
+      alert(error.response?.data?.message || "Demotion failed");
     }
   };
 
@@ -41,12 +54,13 @@ const ManageBosses = () => {
         Manage Bosses
       </Typography>
 
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 4, display: "flex", alignItems: "center", gap: 2 }}>
         <TextField
           label="User Email"
           value={newBossEmail}
           onChange={(e) => setNewBossEmail(e.target.value)}
-          sx={{ mr: 2 }}
+          fullWidth
+          variant="outlined"
         />
         <Button variant="contained" onClick={handleAddBoss}>
           Promote to Boss
@@ -57,7 +71,13 @@ const ManageBosses = () => {
         {bosses.map((boss) => (
           <ListItem key={boss._id}>
             <ListItemText primary={boss.name} secondary={boss.email} />
-            <Button color="error">Demote</Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => handleDemote(boss._id)}
+            >
+              Demote
+            </Button>
           </ListItem>
         ))}
       </List>
