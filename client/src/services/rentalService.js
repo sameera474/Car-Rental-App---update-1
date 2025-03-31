@@ -1,22 +1,20 @@
 // File: client/src/services/rentalService.js
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import axiosInstance from "./axiosInstance";
 
 export const createRental = async (rentalData) => {
   try {
-    const response = await axios.post(`${API_URL}/rentals`, rentalData);
+    const response = await axiosInstance.post("/rentals", rentalData);
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw error.response?.data || error.message;
   }
 };
 
 export const returnRental = async (rentalId) => {
   try {
-    const response = await axios.post(`${API_URL}/rentals/${rentalId}/return`);
+    const response = await axiosInstance.post(`/rentals/${rentalId}/return`);
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    throw error.response?.data || error.message;
   }
 };

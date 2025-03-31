@@ -7,17 +7,28 @@ import {
   Paper,
   Button,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
 } from "@mui/material";
 import { fetchCarById } from "../../services/carService";
 import { createRental } from "../../services/rentalService";
+import { useAuth } from "../../context/AuthContext";
 
 const CarDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [car, setCar] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [renting, setRenting] = useState(false);
   const [error, setError] = useState(null);
+  const [showRentalDialog, setShowRentalDialog] = useState(false);
+  const [rentalDates, setRentalDates] = useState({
+    start: new Date(),
+    end: new Date(Date.now() + 86400000),
+  });
 
   useEffect(() => {
     const getCar = async () => {
@@ -34,24 +45,33 @@ const CarDetails = () => {
   }, [id]);
 
   const handleRent = async () => {
-    setRenting(true);
     try {
-      await createRental({ carId: car.id });
+      if (!user && !authLoading) {
+        navigate("/login");
+        return;
+      }
+
+      await createRental({
+        carId: car._id,
+        startDate: rentalDates.start.toISOString(),
+        endDate: rentalDates.end.toISOString(),
+      });
       navigate("/user/myrentals");
     } catch (err) {
-      setError("Rental creation failed.");
+      setError(err.message || "Rental creation failed.");
     } finally {
-      setRenting(false);
+      setShowRentalDialog(false);
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <Box sx={{ p: 3, display: "flex", justifyContent: "center" }}>
         <CircularProgress />
       </Box>
     );
   }
+
   if (error) {
     return (
       <Box sx={{ p: 3 }}>
@@ -59,25 +79,27 @@ const CarDetails = () => {
       </Box>
     );
   }
+
   return (
     <Box sx={{ p: 3 }}>
       <Paper sx={{ p: 2 }}>
         <Typography variant="h4" gutterBottom>
-          {car.manufacturer} {car.model}
+          {car.brand} {car.model}
         </Typography>
         <Typography variant="body1" gutterBottom>
-          {car.description}
+          Year: {car.year} | Seats: {car.seats} | Doors: {car.doors}
         </Typography>
         <Typography variant="body2" gutterBottom>
           Price per day: ${car.pricePerDay}
         </Typography>
+
         <Button
           variant="contained"
           color="primary"
-          onClick={handleRent}
-          disabled={renting}
+          onClick={() => setShowRentalDialog(true)}
+          disabled={!user || loading}
         >
-          {renting ? "Processing..." : "Rent This Car"}
+          {loading ? "Loading..." : user ? "Rent This Car" : "Login to Rent"}
         </Button>
         <Button
           variant="outlined"
@@ -88,6 +110,48 @@ const CarDetails = () => {
           Back to Cars
         </Button>
       </Paper>
+
+      <Dialog
+        open={showRentalDialog}
+        onClose={() => setShowRentalDialog(false)}
+      >
+        <DialogTitle>
+          Confirm Rental for {car.brand} {car.model}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Start Date"
+            type="date"
+            value={rentalDates.start.toISOString().split("T")[0]}
+            onChange={(e) =>
+              setRentalDates({
+                ...rentalDates,
+                start: new Date(e.target.value),
+              })
+            }
+            fullWidth
+            sx={{ mt: 2 }}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            label="End Date"
+            type="date"
+            value={rentalDates.end.toISOString().split("T")[0]}
+            onChange={(e) =>
+              setRentalDates({ ...rentalDates, end: new Date(e.target.value) })
+            }
+            fullWidth
+            sx={{ mt: 2 }}
+            InputLabelProps={{ shrink: true }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowRentalDialog(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleRent}>
+            Confirm Rental
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

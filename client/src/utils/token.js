@@ -1,3 +1,4 @@
+// File: client/src/utils/token.js
 export const setToken = (token) => {
   try {
     localStorage.setItem("authToken", token);

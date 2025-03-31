@@ -1,3 +1,4 @@
+// File: client/src/services/axiosInstance.js
 import axios from "axios";
 import { getToken, removeToken } from "../utils/token";
 
@@ -10,7 +11,6 @@ const axiosInstance = axios.create({
   },
 });
 
-// Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = getToken();
@@ -22,7 +22,6 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
