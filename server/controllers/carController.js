@@ -70,7 +70,6 @@ export const addCar = async (req, res) => {
     });
   }
 };
-
 export const updateCar = async (req, res) => {
   try {
     const { body, file } = req;
@@ -88,6 +87,9 @@ export const updateCar = async (req, res) => {
 
     if (file) {
       updates.image = `${protocol}://${host}/uploads/${file.filename}`;
+    } else if (body.imageUrl) {
+      // Add this line
+      updates.image = body.imageUrl;
     }
 
     const updatedCar = await Car.findByIdAndUpdate(req.params.id, updates, {

@@ -1,11 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Card, CardContent, Button } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Button,
+  CircularProgress,
+  Alert,
+  Chip,
+} from "@mui/material";
 import axiosInstance from "../../services/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
 import ReviewForm from "../../components/ReviewForm";
 
 const MyRentals = () => {
   const [rentals, setRentals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { user } = useAuth();
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [selectedCarForReview, setSelectedCarForReview] = useState(null);
@@ -13,32 +24,57 @@ const MyRentals = () => {
   useEffect(() => {
     const fetchRentals = async () => {
       try {
+        setLoading(true);
         const { data } = await axiosInstance.get(`/rentals/user/${user.id}`);
         setRentals(data);
+        setError(null);
       } catch (error) {
+        setError(error.response?.data?.message || "Failed to load rentals");
         console.error("Error fetching rentals:", error);
+      } finally {
+        setLoading(false);
       }
     };
-    user && fetchRentals();
+
+    if (user?.id) {
+      fetchRentals();
+    }
   }, [user]);
 
-  // Update the handleReturn function
   const handleReturn = async (rentalId) => {
     try {
       const { data } = await axiosInstance.put(`/rentals/${rentalId}/return`);
 
-      // Verify response structure
       if (!data?.carId) {
-        throw new Error("Missing car ID in return response");
+        throw new Error("Invalid response from server");
       }
 
       setRentals((prev) => prev.filter((r) => r._id !== rentalId));
       setSelectedCarForReview(data.carId);
       setShowReviewForm(true);
     } catch (error) {
-      alert(error.response?.data?.message || "Return failed");
+      setError(error.response?.data?.message || "Return failed");
     }
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3, display: "flex", justifyContent: "center" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
@@ -46,39 +82,64 @@ const MyRentals = () => {
         My Rentals
       </Typography>
 
-      {rentals.map((rental) => (
-        <Card key={rental._id} sx={{ mb: 2 }}>
-          <CardContent>
-            <Typography variant="h6">
-              {rental.car.brand} {rental.car.model}
-            </Typography>
-            <Typography>
-              {new Date(rental.startDate).toLocaleDateString()} -{" "}
-              {new Date(rental.endDate).toLocaleDateString()}
-            </Typography>
-            <Typography>Total: ${rental.totalCost}</Typography>
-            <Typography color={rental.status === "active" ? "green" : "gray"}>
-              Status: {rental.status.toUpperCase()}
-            </Typography>
-
-            {rental.status === "active" && (
-              <Button
-                variant="contained"
-                color="secondary"
-                sx={{ mt: 2 }}
-                onClick={() => handleReturn(rental._id)}
-              >
-                Return Car
-              </Button>
-            )}
-          </CardContent>
+      {rentals.length === 0 ? (
+        <Card sx={{ p: 2 }}>
+          <Typography>No active or past rentals found</Typography>
         </Card>
-      ))}
+      ) : (
+        rentals.map((rental) => (
+          <Card key={rental._id} sx={{ mb: 2 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                {rental.car?.brand || "Unknown Brand"}{" "}
+                {rental.car?.model || "Unknown Model"}
+              </Typography>
+
+              <Box sx={{ mb: 2 }}>
+                <Chip
+                  label={rental.status.toUpperCase()}
+                  color={
+                    rental.status === "active"
+                      ? "success"
+                      : rental.status === "completed"
+                      ? "secondary"
+                      : "warning"
+                  }
+                  sx={{ mr: 2 }}
+                />
+                <Typography variant="body2">
+                  Total Cost: ${rental.totalCost?.toFixed(2) || "0.00"}
+                </Typography>
+              </Box>
+
+              <Typography variant="body2">
+                Rental Period: {new Date(rental.startDate).toLocaleDateString()}{" "}
+                - {new Date(rental.endDate).toLocaleDateString()}
+              </Typography>
+
+              {rental.status === "active" && (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  sx={{ mt: 2 }}
+                  onClick={() => handleReturn(rental._id)}
+                >
+                  Return Car
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ))
+      )}
 
       {showReviewForm && selectedCarForReview && (
         <ReviewForm
           carId={selectedCarForReview}
           onSuccess={() => {
+            setShowReviewForm(false);
+            setSelectedCarForReview(null);
+          }}
+          onCancel={() => {
             setShowReviewForm(false);
             setSelectedCarForReview(null);
           }}

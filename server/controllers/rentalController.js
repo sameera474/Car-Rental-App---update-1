@@ -2,15 +2,18 @@
 import Rental from "../models/Rental.js";
 import Car from "../models/Car.js";
 
+// server/controllers/rentalController.js
 export const getUserRentals = async (req, res) => {
   try {
-    // Verify user access
     if (req.params.userId !== req.user.id) {
       return res.status(403).json({ message: "Unauthorized access" });
     }
 
     const rentals = await Rental.find({ user: req.params.userId })
-      .populate("car")
+      .populate({
+        path: "car",
+        select: "brand model image pricePerDay",
+      })
       .sort({ startDate: -1 });
 
     res.json(rentals);

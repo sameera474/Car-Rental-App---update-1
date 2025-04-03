@@ -44,6 +44,14 @@ const ManageCars = () => {
   });
 
   useEffect(() => {
+    return () => {
+      if (newCar.image && typeof newCar.image !== "string") {
+        URL.revokeObjectURL(newCar.image);
+      }
+    };
+  }, [newCar.image]);
+
+  useEffect(() => {
     const fetchCars = async () => {
       try {
         const { data } = await axiosInstance.get("/cars");
@@ -54,6 +62,7 @@ const ManageCars = () => {
     };
     fetchCars();
   }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -61,13 +70,11 @@ const ManageCars = () => {
     try {
       const formData = new FormData();
 
-      // Append all car data
       Object.entries(newCar).forEach(([key, value]) => {
         if (key === "image") {
           if (value instanceof File) {
             formData.append("image", value);
           } else if (typeof value === "string") {
-            // Preserve existing image URL if not changing
             formData.append("imageUrl", value);
           }
         } else {
@@ -100,7 +107,13 @@ const ManageCars = () => {
   };
 
   const handleFileChange = (e) => {
-    setNewCar({ ...newCar, image: e.target.files[0] });
+    const file = e.target.files[0];
+    if (file) {
+      setNewCar((prev) => ({
+        ...prev,
+        image: file,
+      }));
+    }
   };
 
   const handleDelete = async (carId) => {
@@ -129,17 +142,15 @@ const ManageCars = () => {
     setEditMode(false);
     setSelectedCar(null);
   };
-
-  const filteredCars = cars.filter((car) => {
-    return (
+  const filteredCars = cars.filter(
+    (car) =>
       (filters.status === "all" ||
         (filters.status === "available" && car.isAvailable) ||
         (filters.status === "rented" && !car.isAvailable)) &&
       (filters.transmission === "all" ||
         car.transmission === filters.transmission) &&
       (filters.location === "all" || car.location === filters.location)
-    );
-  });
+  );
 
   return (
     <Box sx={{ p: 3 }}>
@@ -321,37 +332,6 @@ const ManageCars = () => {
             <MenuItem value="rented">Rented</MenuItem>
           </Select>
         </FormControl>
-
-        {/* <FormControl variant="outlined" sx={{ minWidth: 120 }}>
-          <InputLabel>Transmission</InputLabel>
-          <Select
-            value={filters.transmission}
-            onChange={(e) =>
-              setFilters({ ...filters, transmission: e.target.value })
-            }
-            label="Transmission"
-          >
-            <MenuItem value="all">All</MenuItem>
-            <MenuItem value="Manual">Manual</MenuItem>
-            <MenuItem value="Automatic">Automatic</MenuItem>
-          </Select>
-        </FormControl> */}
-
-        {/* <FormControl variant="outlined" sx={{ minWidth: 120 }}>
-          <InputLabel>Location</InputLabel>
-          <Select
-            value={filters.location}
-            onChange={(e) =>
-              setFilters({ ...filters, location: e.target.value })
-            }
-            label="Location"
-          >
-            <MenuItem value="all">All</MenuItem>
-            <MenuItem value="Main Branch">Main Branch</MenuItem>
-            <MenuItem value="Downtown">Downtown</MenuItem>
-            <MenuItem value="Airport">Airport</MenuItem>
-          </Select>
-        </FormControl> */}
       </Box>
 
       <Typography variant="h5" gutterBottom>
@@ -363,7 +343,6 @@ const ManageCars = () => {
           <Grid item xs={12} md={6} lg={4} key={car._id}>
             <Card>
               <CardContent>
-                {/* Improved Image Display */}
                 {car.image && (
                   <Box
                     sx={{
@@ -385,6 +364,7 @@ const ManageCars = () => {
                     />
                   </Box>
                 )}
+
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography variant="h6">
                     {car.brand} {car.model}
@@ -394,32 +374,6 @@ const ManageCars = () => {
                     color={car.isAvailable ? "success" : "error"}
                   />
                 </Box>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mt: 1 }}
-                >
-                  {car.year} | {car.transmission}
-                </Typography>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 1,
-                    mt: 1,
-                    color: "text.secondary",
-                  }}
-                >
-                  <Typography variant="body2">
-                    <strong>Seats:</strong> {car.seats}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Doors:</strong> {car.doors}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Location:</strong> {car.location}
-                  </Typography>
-                </Box>
 
                 <Box sx={{ mt: 2, display: "flex", gap: 1 }}>
                   <IconButton
@@ -428,7 +382,7 @@ const ManageCars = () => {
                       setEditMode(true);
                       setNewCar({
                         ...car,
-                        image: car.image, // Preserve existing image URL
+                        image: car.image, // Preserve existing URL
                       });
                     }}
                   >
