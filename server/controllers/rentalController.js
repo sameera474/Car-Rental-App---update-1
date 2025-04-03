@@ -127,3 +127,71 @@ export const returnCar = async (req, res) => {
     session.endSession();
   }
 };
+// File: server/controllers/rentalController.js
+export const getPendingRentals = async (req, res) => {
+  try {
+    const rentals = await Rental.find({ status: "pending" })
+      .populate("user", "name email")
+      .populate("car", "brand model pricePerDay");
+    res.json(rentals);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching pending rentals" });
+  }
+};
+
+export const approveRental = async (req, res) => {
+  const session = await Rental.startSession();
+  session.startTransaction();
+
+  try {
+    const rental = await Rental.findByIdAndUpdate(
+      req.params.id,
+      { status: "approved" },
+      { new: true, session }
+    ).populate("car");
+
+    await Car.findByIdAndUpdate(
+      rental.car._id,
+      { isAvailable: false },
+      { session }
+    );
+
+    await session.commitTransaction();
+    res.json({ message: "Rental approved successfully" });
+  } catch (error) {
+    await session.abortTransaction();
+    res.status(500).json({ message: "Error approving rental" });
+  } finally {
+    session.endSession();
+  }
+};
+
+export const getRentalStats = async (req, res) => {
+  try {
+    const stats = await Rental.aggregate([
+      {
+        $lookup: {
+          from: "cars",
+          localField: "car",
+          foreignField: "_id",
+          as: "car",
+        },
+      },
+      {
+        $group: {
+          _id: "$car._id",
+          totalRevenue: { $sum: "$totalCost" },
+          rentalCount: { $sum: 1 },
+          carDetails: { $first: "$car" },
+        },
+      },
+      {
+        $sort: { rentalCount: -1 },
+      },
+    ]);
+
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching rental stats" });
+  }
+};

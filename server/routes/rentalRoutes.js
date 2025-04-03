@@ -1,21 +1,25 @@
-// server/routes/rentalRoutes.js
+// File: server/routes/rentalRoutes.js
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 import {
   rentCar,
   returnCar,
   getUserRentals,
+  getPendingRentals,
+  approveRental,
+  getRentalStats,
 } from "../controllers/rentalController.js";
 
 const router = express.Router();
 
-// POST /api/rentals - Create new rental
+// Manager routes
+router.get("/pending", protect, authorize("manager"), getPendingRentals);
+router.put("/:id/approve", protect, authorize("manager"), approveRental);
+router.get("/stats", protect, authorize("manager"), getRentalStats);
+
+// Existing user routes
 router.post("/", protect, rentCar);
-
-// PUT /api/rentals/:id/return - Return a car
 router.put("/:id/return", protect, returnCar);
-
-// GET /api/rentals/user/:userId - Get user rentals
 router.get("/user/:userId", protect, getUserRentals);
 
 export default router;

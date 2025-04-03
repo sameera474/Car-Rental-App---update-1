@@ -86,12 +86,50 @@ const CarDetails = () => {
         <Typography variant="h4" gutterBottom>
           {car.brand} {car.model}
         </Typography>
-        <Typography variant="body1" gutterBottom>
-          Year: {car.year} | Seats: {car.seats} | Doors: {car.doors}
-        </Typography>
-        <Typography variant="body2" gutterBottom>
-          Price per day: ${car.pricePerDay}
-        </Typography>
+        {car.image && (
+          <Box
+            sx={{
+              mt: 2,
+              mb: 4,
+              display: "flex",
+              justifyContent: "center",
+              borderRadius: "8px",
+              overflow: "hidden",
+            }}
+          >
+            <img
+              src={car.image}
+              alt={`${car.brand} ${car.model}`}
+              style={{
+                maxWidth: "100%",
+                height: "300px",
+                objectFit: "cover",
+              }}
+            />
+          </Box>
+        )}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+            gap: 2,
+            mb: 4,
+          }}
+        >
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="subtitle1">Specifications</Typography>
+            <Typography>Year: {car.year}</Typography>
+            <Typography>Seats: {car.seats}</Typography>
+            <Typography>Doors: {car.doors}</Typography>
+            <Typography>Transmission: {car.transmission}</Typography>
+          </Paper>
+
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="subtitle1">Pricing</Typography>
+            <Typography>Daily Rate: ${car.pricePerDay}</Typography>
+            <Typography>Location: {car.location}</Typography>
+          </Paper>
+        </Box>
 
         <Button
           variant="contained"

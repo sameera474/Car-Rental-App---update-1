@@ -29,6 +29,10 @@ export const upload = multer({
 export const addCar = async (req, res) => {
   try {
     const { body, file } = req;
+    const protocol = req.protocol;
+    const host = req.get("host");
+
+    // Validation
     const requiredFields = ["brand", "model", "year", "pricePerDay"];
     const missingFields = requiredFields.filter((field) => !body[field]);
 
@@ -38,25 +42,55 @@ export const addCar = async (req, res) => {
       });
     }
 
+    if (!file) {
+      return res.status(400).json({ message: "Image is required" });
+    }
+
+    // Construct car data
     const carData = {
-      ...body,
-      image: file ? `/uploads/${file.filename}` : "",
-      year: parseInt(body.year),
-      pricePerDay: parseFloat(body.pricePerDay),
-      isAvailable: true,
+      brand: body.brand,
+      model: body.model,
+      year: Number(body.year),
+      pricePerDay: Number(body.pricePerDay),
+      seats: Number(body.seats || 5),
+      doors: Number(body.doors || 5),
+      transmission: body.transmission || "Manual",
+      location: body.location || "Main Branch",
+      image: file ? `${protocol}://${host}/uploads/${file.filename}` : "",
+      isAvailable: body.isAvailable !== "false",
     };
 
     const newCar = await Car.create(carData);
     res.status(201).json(newCar);
   } catch (error) {
-    console.error("Error adding car:", error);
-    res.status(500).json({ message: "Error adding car", error: error.message });
+    console.error("Add car error:", error);
+    res.status(500).json({
+      message: error.message || "Error adding car",
+      error: error.errors,
+    });
   }
 };
 
 export const updateCar = async (req, res) => {
   try {
-    const updatedCar = await Car.findByIdAndUpdate(req.params.id, req.body, {
+    const { body, file } = req;
+    const protocol = req.protocol;
+    const host = req.get("host");
+
+    const updates = {
+      ...body,
+      year: Number(body.year),
+      pricePerDay: Number(body.pricePerDay),
+      seats: Number(body.seats),
+      doors: Number(body.doors),
+      isAvailable: body.isAvailable !== "false",
+    };
+
+    if (file) {
+      updates.image = `${protocol}://${host}/uploads/${file.filename}`;
+    }
+
+    const updatedCar = await Car.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true,
     });
@@ -66,17 +100,20 @@ export const updateCar = async (req, res) => {
     }
     res.json(updatedCar);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error updating car", error: error.message });
+    res.status(500).json({
+      message: error.message || "Error updating car",
+      error: error.errors,
+    });
   }
 };
 
 export const getAllCars = async (req, res) => {
   try {
     const cars = await Car.find().sort({ createdAt: -1 });
+    console.log("Fetched cars:", cars); // Add logging
     res.json(cars);
   } catch (error) {
+    console.error("Error fetching cars:", error);
     res
       .status(500)
       .json({ message: "Error fetching cars", error: error.message });
@@ -102,8 +139,11 @@ export const deleteCar = async (req, res) => {
     }
 
     if (car.image) {
-      const imagePath = path.join(uploadDir, car.image.split("/uploads/")[1]);
-      fs.unlinkSync(imagePath);
+      const filename = car.image.split("/uploads/")[1];
+      const imagePath = path.join(uploadDir, filename);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
     }
 
     res.json({ message: "Car deleted successfully" });
@@ -125,5 +165,39 @@ export const getCarById = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error fetching car", error: error.message });
+  }
+};
+// File: server/controllers/carController.js
+export const getCarStats = async (req, res) => {
+  try {
+    const stats = await Rental.aggregate([
+      {
+        $lookup: {
+          from: "cars",
+          localField: "car",
+          foreignField: "_id",
+          as: "car",
+        },
+      },
+      {
+        $unwind: "$car",
+      },
+      {
+        $group: {
+          _id: "$car._id",
+          brand: { $first: "$car.brand" },
+          model: { $first: "$car.model" },
+          totalRevenue: { $sum: "$totalCost" },
+          rentalCount: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { rentalCount: -1 },
+      },
+    ]);
+
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching car statistics" });
   }
 };

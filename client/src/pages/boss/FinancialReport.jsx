@@ -1,3 +1,4 @@
+// File: client/src/pages/boss/FinancialReport.jsx
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -18,7 +19,7 @@ const FinancialReport = () => {
   useEffect(() => {
     const fetchReport = async () => {
       try {
-        const response = await axiosInstance.get("/reports/financial");
+        const response = await axiosInstance.get("/api/admin/financial-report");
         setReport(response.data);
       } catch (error) {
         console.error("Error fetching report:", error);
@@ -51,7 +52,12 @@ const FinancialReport = () => {
                 <TableCell>Total Rentals</TableCell>
                 <TableCell align="right">{report.totalRentals}</TableCell>
               </TableRow>
-              {/* Add more metrics */}
+              {report.details.map((detail, index) => (
+                <TableRow key={index}>
+                  <TableCell>{detail.car} Earnings</TableCell>
+                  <TableCell align="right">${detail.cost}</TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </TableContainer>

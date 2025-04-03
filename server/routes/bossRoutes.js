@@ -1,13 +1,20 @@
+// File: server/routes/bossRoutes.js
 import express from "express";
 import {
   getFinancialReport,
   manageManagers,
 } from "../controllers/bossController.js";
-import { authenticate, isAdmin } from "../middleware/authMiddleware.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/financial-report", authenticate, isAdmin, getFinancialReport);
-router.post("/manage-managers", authenticate, isAdmin, manageManagers);
+router.get(
+  "/financial-report",
+  protect,
+  authorize("boss", "admin"),
+  getFinancialReport
+);
+
+router.post("/manage-managers", protect, authorize("boss"), manageManagers);
 
 export default router;
