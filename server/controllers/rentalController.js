@@ -134,11 +134,43 @@ export const returnCar = async (req, res) => {
 export const getPendingRentals = async (req, res) => {
   try {
     const rentals = await Rental.find({ status: "pending" })
-      .populate("user", "name email")
-      .populate("car", "brand model pricePerDay");
+      .populate("user", "email")
+      .populate("car", "brand model");
     res.json(rentals);
   } catch (error) {
     res.status(500).json({ message: "Error fetching pending rentals" });
+  }
+};
+
+export const updateRentalStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const rental = await Rental.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    ).populate("car");
+
+    if (status === "approved") {
+      await Car.findByIdAndUpdate(rental.car._id, { isAvailable: false });
+    }
+
+    res.json(rental);
+  } catch (error) {
+    res.status(500).json({ message: "Error updating rental status" });
+  }
+};
+
+export const getReturnedCars = async (req, res) => {
+  try {
+    const returnedCars = await Rental.find({ status: "completed" })
+      .populate("car", "brand model")
+      .sort({ endDate: -1 });
+    res.json(returnedCars);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching returned cars" });
   }
 };
 

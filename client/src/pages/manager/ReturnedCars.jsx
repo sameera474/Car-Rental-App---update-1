@@ -1,5 +1,4 @@
-// File: client/src/pages/manager/ReturnedCars.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -9,14 +8,42 @@ import {
   ListItemText,
   Divider,
   Button,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
-
-const dummyReturnedCars = [
-  { id: 1, car: "Toyota Corolla", returnDate: "2025-03-25" },
-  { id: 2, car: "Honda Civic", returnDate: "2025-03-26" },
-];
+import axiosInstance from "../../services/axiosInstance";
 
 const ReturnedCars = () => {
+  const [returns, setReturns] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchReturns = async () => {
+      try {
+        const { data } = await axiosInstance.get("/rentals/returned");
+        setReturns(data);
+      } catch (error) {
+        setError("Failed to load returned cars");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReturns();
+  }, []);
+
+  const handleProcessReturn = async (carId) => {
+    try {
+      await axiosInstance.put(`/cars/${carId}`, { isAvailable: true });
+      setReturns((prev) => prev.filter((r) => r.car._id !== carId));
+    } catch (error) {
+      setError("Failed to process return");
+    }
+  };
+
+  if (loading) return <CircularProgress />;
+  if (error) return <Alert severity="error">{error}</Alert>;
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
@@ -24,14 +51,20 @@ const ReturnedCars = () => {
       </Typography>
       <Paper sx={{ p: 2 }}>
         <List>
-          {dummyReturnedCars.map((car) => (
-            <React.Fragment key={car.id}>
+          {returns.map((ret) => (
+            <React.Fragment key={ret._id}>
               <ListItem>
                 <ListItemText
-                  primary={car.car}
-                  secondary={`Returned on: ${car.returnDate}`}
+                  primary={`${ret.car?.brand} ${ret.car?.model}`}
+                  secondary={`Returned on: ${new Date(
+                    ret.endDate
+                  ).toLocaleDateString()}`}
                 />
-                <Button variant="contained" color="primary">
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => handleProcessReturn(ret.car._id)}
+                >
                   Process Return
                 </Button>
               </ListItem>

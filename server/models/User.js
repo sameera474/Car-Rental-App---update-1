@@ -31,6 +31,7 @@ const UserSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  status: { type: String, enum: ["active", "locked"], default: "active" },
 });
 
 // Encrypt password using bcrypt

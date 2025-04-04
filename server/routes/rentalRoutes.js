@@ -8,6 +8,8 @@ import {
   getPendingRentals,
   approveRental,
   getRentalStats,
+  updateRentalStatus,
+  getReturnedCars,
 } from "../controllers/rentalController.js";
 
 const router = express.Router();
@@ -16,6 +18,9 @@ const router = express.Router();
 router.get("/pending", protect, authorize("manager"), getPendingRentals);
 router.put("/:id/approve", protect, authorize("manager"), approveRental);
 router.get("/stats", protect, authorize("manager"), getRentalStats);
+
+router.put("/:id/status", protect, authorize("manager"), updateRentalStatus);
+router.get("/returned", protect, authorize("manager"), getReturnedCars);
 
 // Existing user routes
 router.post("/", protect, rentCar);

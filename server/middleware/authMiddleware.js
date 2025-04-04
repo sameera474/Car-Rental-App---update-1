@@ -40,9 +40,10 @@ export const protect = async (req, res, next) => {
 
 export const authorize = (...roles) => {
   return (req, res, next) => {
+    // Add this check to ensure roles are properly compared
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
-        message: `Role '${req.user.role}' not authorized for this operation`,
+        message: `User role ${req.user.role} is unauthorized to access this resource`,
       });
     }
     next();
