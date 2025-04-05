@@ -61,6 +61,10 @@ const ManageUsers = () => {
   };
 
   const handleDeleteUser = async (userId) => {
+    if (userId === user.id) {
+      setError("Cannot delete your own account");
+      return;
+    }
     try {
       await axiosInstance.delete(`/users/${userId}`);
       setUsers((prev) => prev.filter((user) => user._id !== userId));

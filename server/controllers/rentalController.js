@@ -203,30 +203,23 @@ export const approveRental = async (req, res) => {
 
 export const getRentalStats = async (req, res) => {
   try {
-    const stats = await Rental.aggregate([
-      {
-        $lookup: {
-          from: "cars",
-          localField: "car",
-          foreignField: "_id",
-          as: "car",
-        },
-      },
-      {
-        $group: {
-          _id: "$car._id",
-          totalRevenue: { $sum: "$totalCost" },
-          rentalCount: { $sum: 1 },
-          carDetails: { $first: "$car" },
-        },
-      },
-      {
-        $sort: { rentalCount: -1 },
-      },
-    ]);
+    const [totalRevenue, availableCars, completedRentals, pendingRequests] =
+      await Promise.all([
+        Rental.aggregate([
+          { $group: { _id: null, total: { $sum: "$totalCost" } } },
+        ]),
+        Car.countDocuments({ isAvailable: true }),
+        Rental.countDocuments({ status: "completed" }),
+        Rental.countDocuments({ status: "pending" }),
+      ]);
 
-    res.json(stats);
+    res.json({
+      totalRevenue: totalRevenue[0]?.total || 0,
+      availableCars,
+      completedRentals,
+      pendingRequests,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching rental stats" });
+    res.status(500).json({ message: "Error fetching stats" });
   }
 };

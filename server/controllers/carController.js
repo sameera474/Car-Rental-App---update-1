@@ -42,10 +42,9 @@ export const addCar = async (req, res) => {
       });
     }
 
-    if (!file) {
+    if (!req.file && !req.body.imageUrl) {
       return res.status(400).json({ message: "Image is required" });
     }
-
     // Construct car data
     const carData = {
       brand: body.brand,
