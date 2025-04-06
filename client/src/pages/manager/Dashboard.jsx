@@ -26,18 +26,56 @@ const ManagerDashboard = () => {
     const fetchStats = async () => {
       try {
         const { data } = await axiosInstance.get("/rentals/stats");
-        setStats(data);
+
+        // Validate response structure
+        if (!data || typeof data !== "object") {
+          throw new Error("Invalid data format received");
+        }
+
+        // Process and sanitize data
+        const processedStats = {
+          totalRevenue: data.totalRevenue || 0,
+          availableCars: data.availableCars || 0,
+          completedRentals: data.completedRentals || 0,
+          pendingRequests: data.pendingRequests || 0,
+        };
+
+        setStats(processedStats);
       } catch (err) {
-        setError("Failed to load dashboard data");
+        console.error("Dashboard error:", err);
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            "Failed to load dashboard data"
+        );
       } finally {
         setLoading(false);
       }
     };
+
     fetchStats();
   }, []);
 
-  if (loading) return <CircularProgress />;
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (loading) {
+    return (
+      <Box sx={{ p: 3, display: "flex", justifyContent: "center" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Button variant="contained" onClick={() => window.location.reload()}>
+          Try Again
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
@@ -46,6 +84,7 @@ const ManagerDashboard = () => {
       </Typography>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Cards with null checks */}
         <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
@@ -54,14 +93,13 @@ const ManagerDashboard = () => {
                 <div>
                   <Typography variant="h6">Total Revenue</Typography>
                   <Typography variant="h4">
-                    ${stats?.totalRevenue?.toLocaleString()}
+                    ${stats?.totalRevenue?.toLocaleString() || "0"}
                   </Typography>
                 </div>
               </Box>
             </CardContent>
           </Card>
         </Grid>
-
         <Grid item xs={12} md={3}>
           <Card>
             <CardContent>

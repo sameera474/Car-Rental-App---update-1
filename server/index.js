@@ -3,6 +3,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
+import statsRoutes from "./routes/statsRoutes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -17,3 +18,4 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
+app.use("/api/stats", statsRoutes);

@@ -21,6 +21,7 @@ import RentalRequests from "../pages/manager/RentalRequests";
 import ReturnedCars from "../pages/manager/ReturnedCars";
 import ManageUsers from "../pages/manager/ManageUsers";
 import ManagerProfile from "../pages/manager/Profile";
+import Statistics from "../pages/manager/Statistics";
 
 // Boss Pages
 import BossDashboard from "../pages/boss/Dashboard";
@@ -70,6 +71,14 @@ const AppRoutes = () => {
           <Route path="/manager/returned-cars" element={<ReturnedCars />} />
           <Route path="/manager/manage-users" element={<ManageUsers />} />
           <Route path="/manager/profile" element={<ManagerProfile />} />
+          <Route
+            path="/manager/statistics"
+            element={
+              <ProtectedRoute allowedRoles={["manager"]}>
+                <Statistics />
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
         {/* Boss Routes */}

@@ -10,6 +10,7 @@ import {
   getRentalStats,
   updateRentalStatus,
   getReturnedCars,
+  getDashboardStats,
 } from "../controllers/rentalController.js";
 
 const router = express.Router();
@@ -18,7 +19,7 @@ const router = express.Router();
 router.get("/pending", protect, authorize("manager"), getPendingRentals);
 router.put("/:id/approve", protect, authorize("manager"), approveRental);
 router.get("/stats", protect, authorize("manager"), getRentalStats);
-
+router.get("/stats", protect, authorize("manager"), getDashboardStats);
 router.put("/:id/status", protect, authorize("manager"), updateRentalStatus);
 router.get("/returned", protect, authorize("manager"), getReturnedCars);
 

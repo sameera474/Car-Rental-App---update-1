@@ -223,3 +223,31 @@ export const getRentalStats = async (req, res) => {
     res.status(500).json({ message: "Error fetching stats" });
   }
 };
+
+export const getDashboardStats = async (req, res) => {
+  try {
+    const [totalRevenue, availableCars, completedRentals, pendingRequests] =
+      await Promise.all([
+        Rental.aggregate([
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$totalCost" },
+            },
+          },
+        ]), // Fixed closing brackets
+        Car.countDocuments({ isAvailable: true }),
+        Rental.countDocuments({ status: "completed" }),
+        Rental.countDocuments({ status: "pending" }),
+      ]);
+
+    res.json({
+      totalRevenue: totalRevenue[0]?.total || 0,
+      availableCars,
+      completedRentals,
+      pendingRequests,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching dashboard stats" });
+  }
+};
