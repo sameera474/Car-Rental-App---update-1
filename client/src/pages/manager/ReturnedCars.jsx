@@ -32,10 +32,12 @@ const ReturnedCars = () => {
     fetchReturns();
   }, []);
 
-  const handleProcessReturn = async (carId) => {
+  const handleProcessReturn = async (rentalId) => {
     try {
-      await axiosInstance.put(`/cars/${carId}`, { isAvailable: true });
-      setReturns((prev) => prev.filter((r) => r.car._id !== carId));
+      await axiosInstance.put(`/rentals/${rentalId}/status`, {
+        status: "processed",
+      });
+      setReturns((prev) => prev.filter((r) => r._id !== rentalId));
     } catch (error) {
       setError("Failed to process return");
     }
@@ -63,7 +65,7 @@ const ReturnedCars = () => {
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick={() => handleProcessReturn(ret.car._id)}
+                  onClick={() => handleProcessReturn(ret._id)}
                 >
                   Process Return
                 </Button>

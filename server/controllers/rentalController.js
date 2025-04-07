@@ -102,30 +102,20 @@ export const returnCar = async (req, res) => {
 
     const rental = await Rental.findOneAndUpdate(
       { _id: id, user: userId, status: "active" },
-      { status: "completed" },
+      { status: "completed" }, // Only update status, don't change car availability
       { new: true, session }
     ).populate("car");
 
-    if (!rental) {
+    if (!rental)
       return res.status(404).json({ message: "Active rental not found" });
-    }
-
-    await Car.findByIdAndUpdate(
-      rental.car._id,
-      { isAvailable: true },
-      { session }
-    );
 
     await session.commitTransaction();
-    res.json({
-      message: "Car returned successfully",
-      carId: rental.car._id, // Ensure correct field name
-    });
+    res.json({ message: "Return request submitted", carId: rental.car._id });
   } catch (error) {
     await session.abortTransaction();
-    res.status(500).json({
-      message: error.message || "Error processing return",
-    });
+    res
+      .status(500)
+      .json({ message: error.message || "Error processing return" });
   } finally {
     session.endSession();
   }
@@ -153,8 +143,8 @@ export const updateRentalStatus = async (req, res) => {
       { new: true }
     ).populate("car");
 
-    if (status === "approved") {
-      await Car.findByIdAndUpdate(rental.car._id, { isAvailable: false });
+    if (status === "processed") {
+      await Car.findByIdAndUpdate(rental.car._id, { isAvailable: true });
     }
 
     res.json(rental);
@@ -162,7 +152,6 @@ export const updateRentalStatus = async (req, res) => {
     res.status(500).json({ message: "Error updating rental status" });
   }
 };
-
 export const getReturnedCars = async (req, res) => {
   try {
     const returnedCars = await Rental.find({ status: "completed" })
