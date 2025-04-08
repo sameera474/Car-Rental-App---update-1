@@ -8,7 +8,7 @@ const NavBar = () => {
   const { user, logout } = useAuth();
 
   const renderUserLinks = () => {
-    if (!user)
+    if (!user) {
       return (
         <>
           <Button color="inherit" component={Link} to="/">
@@ -25,7 +25,9 @@ const NavBar = () => {
           </Button>
         </>
       );
+    }
 
+    // Define links for roles
     const roleLinks = {
       user: [
         { path: "/user/dashboard", text: "Dashboard" },
@@ -56,9 +58,12 @@ const NavBar = () => {
       ],
     };
 
+    // Use a safe fallback (empty array) if the role is missing or mismatched.
+    const links = roleLinks[user.role] || [];
+
     return (
       <>
-        {roleLinks[user.role].map((link) => (
+        {links.map((link) => (
           <Button
             key={link.path}
             color="inherit"

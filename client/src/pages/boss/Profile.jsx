@@ -10,7 +10,7 @@ import {
 import axiosInstance from "../../services/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
 
-const BossProfile = () => {
+const AdminProfile = () => {
   const { user, login } = useAuth();
   const [profile, setProfile] = useState({ name: "", email: "", phone: "" });
   const [error, setError] = useState("");
@@ -42,7 +42,7 @@ const BossProfile = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        Boss Profile
+        Admin Profile
       </Typography>
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -89,7 +89,7 @@ const BossProfile = () => {
             color="primary"
             sx={{ mt: 2 }}
           >
-            Save Changes
+            Save
           </Button>
         </Box>
       </Paper>
@@ -97,4 +97,4 @@ const BossProfile = () => {
   );
 };
 
-export default BossProfile;
+export default AdminProfile;
