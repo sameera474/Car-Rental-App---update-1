@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
-  Button,
   List,
   ListItem,
   ListItemText,
   Divider,
+  Button,
   CircularProgress,
   Alert,
 } from "@mui/material";
@@ -22,7 +22,7 @@ const RentalRequests = () => {
       try {
         const { data } = await axiosInstance.get("/rentals/pending");
         setRequests(data);
-      } catch (error) {
+      } catch (err) {
         setError("Failed to load rental requests");
       } finally {
         setLoading(false);
@@ -35,7 +35,7 @@ const RentalRequests = () => {
     try {
       await axiosInstance.put(`/rentals/${id}/status`, { status });
       setRequests((prev) => prev.filter((request) => request._id !== id));
-    } catch (error) {
+    } catch (err) {
       setError("Failed to update status");
     }
   };

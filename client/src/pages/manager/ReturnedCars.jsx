@@ -23,7 +23,7 @@ const ReturnedCars = () => {
       try {
         const { data } = await axiosInstance.get("/rentals/returned");
         setReturns(data);
-      } catch (error) {
+      } catch (err) {
         setError("Failed to load returned cars");
       } finally {
         setLoading(false);
@@ -38,7 +38,7 @@ const ReturnedCars = () => {
         status: "processed",
       });
       setReturns((prev) => prev.filter((r) => r._id !== rentalId));
-    } catch (error) {
+    } catch (err) {
       setError("Failed to process return");
     }
   };

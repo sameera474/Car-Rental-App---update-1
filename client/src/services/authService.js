@@ -1,18 +1,14 @@
-// File: client/src/services/authService.js
 import axiosInstance from "./axiosInstance";
 
-// File: client/src/services/authService.js
 export const loginUser = async (email, password) => {
   try {
     const response = await axiosInstance.post("/auth/login", {
       email,
       password,
     });
-
     if (!response.data.token) {
       throw new Error("Authentication token missing");
     }
-
     return response.data;
   } catch (error) {
     throw new Error(

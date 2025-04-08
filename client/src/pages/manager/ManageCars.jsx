@@ -1,415 +1,3 @@
-// import React, { useState, useEffect } from "react";
-// import {
-//   Box,
-//   Typography,
-//   TextField,
-//   Button,
-//   CircularProgress,
-//   Card,
-//   CardContent,
-//   IconButton,
-//   FormControl,
-//   InputLabel,
-//   Select,
-//   MenuItem,
-//   Chip,
-//   Avatar,
-//   Grid,
-// } from "@mui/material";
-// import DeleteIcon from "@mui/icons-material/Delete";
-// import EditIcon from "@mui/icons-material/Edit";
-// import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-// import axiosInstance from "../../services/axiosInstance";
-
-// const ManageCars = () => {
-//   const [cars, setCars] = useState([]);
-//   const [newCar, setNewCar] = useState({
-//     brand: "",
-//     model: "",
-//     year: "",
-//     pricePerDay: "",
-//     seats: 5,
-//     doors: 5,
-//     transmission: "Manual",
-//     location: "Main Branch",
-//     image: null,
-//   });
-//   const [loading, setLoading] = useState(false);
-//   const [editMode, setEditMode] = useState(false);
-//   const [selectedCar, setSelectedCar] = useState(null);
-//   const [filters, setFilters] = useState({
-//     status: "all",
-//     transmission: "all",
-//     location: "all",
-//   });
-
-//   useEffect(() => {
-//     return () => {
-//       if (newCar.image && typeof newCar.image !== "string") {
-//         URL.revokeObjectURL(newCar.image);
-//       }
-//     };
-//   }, [newCar.image]);
-
-//   useEffect(() => {
-//     const fetchCars = async () => {
-//       try {
-//         const { data } = await axiosInstance.get("/cars");
-//         setCars(data);
-//       } catch (error) {
-//         console.error("Error fetching cars:", error);
-//       }
-//     };
-//     fetchCars();
-//   }, []);
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setLoading(true);
-
-//     try {
-//       const formData = new FormData();
-
-//       Object.entries(newCar).forEach(([key, value]) => {
-//         if (key === "image") {
-//           if (value instanceof File) {
-//             formData.append("image", value);
-//           } else if (typeof value === "string") {
-//             formData.append("imageUrl", value);
-//           }
-//         } else {
-//           formData.append(key, value);
-//         }
-//       });
-
-//       const config = {
-//         headers: {
-//           "Content-Type": "multipart/form-data",
-//         },
-//       };
-
-//       const { data } = editMode
-//         ? await axiosInstance.put(`/cars/${selectedCar._id}`, formData, config)
-//         : await axiosInstance.post("/cars", formData, config);
-
-//       setCars((prev) =>
-//         editMode
-//           ? prev.map((c) => (c._id === data._id ? data : c))
-//           : [data, ...prev]
-//       );
-//       resetForm();
-//     } catch (error) {
-//       console.error("Error saving car:", error.response?.data || error.message);
-//       alert(`Save failed: ${error.response?.data?.message || error.message}`);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleFileChange = (e) => {
-//     const file = e.target.files[0];
-//     if (file) {
-//       setNewCar((prev) => ({
-//         ...prev,
-//         image: file,
-//       }));
-//     }
-//   };
-
-//   const handleDelete = async (carId) => {
-//     if (!window.confirm("Are you sure you want to delete this car?")) return;
-
-//     try {
-//       await axiosInstance.delete(`/cars/${carId}`);
-//       setCars((prev) => prev.filter((c) => c._id !== carId));
-//     } catch (error) {
-//       console.error("Error deleting car:", error);
-//     }
-//   };
-
-//   const resetForm = () => {
-//     setNewCar({
-//       brand: "",
-//       model: "",
-//       year: "",
-//       pricePerDay: "",
-//       seats: 5,
-//       doors: 5,
-//       transmission: "Manual",
-//       location: "Main Branch",
-//       image: null,
-//     });
-//     setEditMode(false);
-//     setSelectedCar(null);
-//   };
-//   const filteredCars = cars.filter(
-//     (car) =>
-//       (filters.status === "all" ||
-//         (filters.status === "available" && car.isAvailable) ||
-//         (filters.status === "rented" && !car.isAvailable)) &&
-//       (filters.transmission === "all" ||
-//         car.transmission === filters.transmission) &&
-//       (filters.location === "all" || car.location === filters.location)
-//   );
-//   const enhancedFilters = {
-//     status: "all",
-//     transmission: "all",
-//     location: "all",
-//     mileage: { min: 0, max: 100000 },
-//   };
-
-//   return (
-//     <Box sx={{ p: 3 }}>
-//       <Typography variant="h4" gutterBottom>
-//         {editMode ? "Edit Car" : "Add New Car"}
-//       </Typography>
-
-//       <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
-//         <Grid container spacing={2}>
-//           <Grid item xs={12} md={6}>
-//             <TextField
-//               label="Brand"
-//               value={newCar.brand}
-//               onChange={(e) => setNewCar({ ...newCar, brand: e.target.value })}
-//               fullWidth
-//               margin="normal"
-//               required
-//             />
-//           </Grid>
-//           <Grid item xs={12} md={6}>
-//             <TextField
-//               label="Model"
-//               value={newCar.model}
-//               onChange={(e) => setNewCar({ ...newCar, model: e.target.value })}
-//               fullWidth
-//               margin="normal"
-//               required
-//             />
-//           </Grid>
-//           <Grid item xs={6} md={3}>
-//             <TextField
-//               label="Year"
-//               type="number"
-//               value={newCar.year}
-//               onChange={(e) => setNewCar({ ...newCar, year: e.target.value })}
-//               fullWidth
-//               margin="normal"
-//               required
-//             />
-//           </Grid>
-//           <Grid item xs={6} md={3}>
-//             <TextField
-//               label="Price/Day"
-//               type="number"
-//               value={newCar.pricePerDay}
-//               onChange={(e) =>
-//                 setNewCar({ ...newCar, pricePerDay: e.target.value })
-//               }
-//               fullWidth
-//               margin="normal"
-//               required
-//             />
-//           </Grid>
-//           {/* Add seats/doors fields here */}
-//           <Grid item xs={6} md={3}>
-//             <TextField
-//               label="Seats"
-//               type="number"
-//               value={newCar.seats}
-//               onChange={(e) => setNewCar({ ...newCar, seats: e.target.value })}
-//               fullWidth
-//               margin="normal"
-//               required
-//               inputProps={{ min: 1 }}
-//             />
-//           </Grid>
-//           <Grid item xs={6} md={3}>
-//             <TextField
-//               label="Doors"
-//               type="number"
-//               value={newCar.doors}
-//               onChange={(e) => setNewCar({ ...newCar, doors: e.target.value })}
-//               fullWidth
-//               margin="normal"
-//               required
-//               inputProps={{ min: 1 }}
-//             />
-//           </Grid>
-
-//           <Grid item xs={6} md={3}>
-//             <FormControl variant="outlined" sx={{ minWidth: 120 }}>
-//               <InputLabel>Transmission</InputLabel>
-//               <Select
-//                 value={filters.transmission}
-//                 onChange={(e) =>
-//                   setFilters({ ...filters, transmission: e.target.value })
-//                 }
-//                 label="Transmission"
-//               >
-//                 <MenuItem value="all">All</MenuItem>
-//                 <MenuItem value="Manual">Manual</MenuItem>
-//                 <MenuItem value="Automatic">Automatic</MenuItem>
-//               </Select>
-//             </FormControl>
-
-//             <FormControl variant="outlined" sx={{ minWidth: 120 }}>
-//               <InputLabel>Location</InputLabel>
-//               <Select
-//                 value={filters.location}
-//                 onChange={(e) =>
-//                   setFilters({ ...filters, location: e.target.value })
-//                 }
-//                 label="Location"
-//               >
-//                 <MenuItem value="all">All</MenuItem>
-//                 <MenuItem value="Main Branch">Main Branch</MenuItem>
-//                 <MenuItem value="Downtown">Downtown</MenuItem>
-//                 <MenuItem value="Airport">Airport</MenuItem>
-//               </Select>
-//             </FormControl>
-//           </Grid>
-//           <Grid item xs={12}>
-//             <input
-//               accept="image/*"
-//               type="file"
-//               onChange={handleFileChange}
-//               style={{ display: "none" }}
-//               id="car-image-upload"
-//             />
-//             <label htmlFor="car-image-upload">
-//               <Button
-//                 variant="contained"
-//                 component="span"
-//                 startIcon={<CloudUploadIcon />}
-//                 sx={{ mr: 2 }}
-//               >
-//                 Upload Image
-//               </Button>
-//             </label>
-
-//             {newCar.image && (
-//               <Box
-//                 sx={{
-//                   mt: 1,
-//                   position: "relative",
-//                   height: 150,
-//                   width: "100%",
-//                   borderRadius: "8px",
-//                   overflow: "hidden",
-//                 }}
-//               >
-//                 <img
-//                   src={
-//                     typeof newCar.image === "string"
-//                       ? newCar.image
-//                       : URL.createObjectURL(newCar.image)
-//                   }
-//                   alt="Preview"
-//                   style={{
-//                     width: "100%",
-//                     height: "100%",
-//                     objectFit: "cover",
-//                   }}
-//                 />
-//               </Box>
-//             )}
-//           </Grid>
-//         </Grid>
-
-//         <Button
-//           type="submit"
-//           variant="contained"
-//           disabled={loading}
-//           sx={{ mt: 2 }}
-//         >
-//           {loading ? <CircularProgress size={24} /> : "Save Car"}
-//         </Button>
-//       </Box>
-
-//       <Box sx={{ mb: 4, display: "flex", gap: 2 }}>
-//         <FormControl variant="outlined" sx={{ minWidth: 120 }}>
-//           <InputLabel>Status</InputLabel>
-//           <Select
-//             value={filters.status}
-//             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-//             label="Status"
-//           >
-//             <MenuItem value="all">All</MenuItem>
-//             <MenuItem value="available">Available</MenuItem>
-//             <MenuItem value="rented">Rented</MenuItem>
-//           </Select>
-//         </FormControl>
-//       </Box>
-
-//       <Typography variant="h5" gutterBottom>
-//         Existing Cars ({filteredCars.length})
-//       </Typography>
-
-//       <Grid container spacing={2}>
-//         {filteredCars.map((car) => (
-//           <Grid item xs={12} md={6} lg={4} key={car._id}>
-//             <Card>
-//               <CardContent>
-//                 {car.image && (
-//                   <Box
-//                     sx={{
-//                       position: "relative",
-//                       height: 200,
-//                       mb: 2,
-//                       borderRadius: "8px",
-//                       overflow: "hidden",
-//                     }}
-//                   >
-//                     <img
-//                       src={car.image}
-//                       alt={`${car.brand} ${car.model}`}
-//                       style={{
-//                         width: "100%",
-//                         height: "100%",
-//                         objectFit: "cover",
-//                       }}
-//                     />
-//                   </Box>
-//                 )}
-
-//                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-//                   <Typography variant="h6">
-//                     {car.brand} {car.model}
-//                   </Typography>
-//                   <Chip
-//                     label={car.isAvailable ? "Available" : "Rented"}
-//                     color={car.isAvailable ? "success" : "error"}
-//                   />
-//                 </Box>
-
-//                 <Box sx={{ mt: 2, display: "flex", gap: 1 }}>
-//                   <IconButton
-//                     onClick={() => {
-//                       setSelectedCar(car);
-//                       setEditMode(true);
-//                       setNewCar({
-//                         ...car,
-//                         image: car.image, // Preserve existing URL
-//                       });
-//                     }}
-//                   >
-//                     <EditIcon />
-//                   </IconButton>
-//                   <IconButton onClick={() => handleDelete(car._id)}>
-//                     <DeleteIcon color="error" />
-//                   </IconButton>
-//                 </Box>
-//               </CardContent>
-//             </Card>
-//           </Grid>
-//         ))}
-//       </Grid>
-//     </Box>
-//   );
-// };
-
-// export default ManageCars;
-
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -439,14 +27,16 @@ const ManageCars = () => {
   const [cars, setCars] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [currentCar, setCurrentCar] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [globalLoading, setGlobalLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
-    status: "all",
+    status: "all", // "active", "rented", "returned", "removed"
     transmission: "all",
     location: "all",
   });
 
+  // Fetch all cars on mount
   useEffect(() => {
     const fetchCars = async () => {
       try {
@@ -455,7 +45,7 @@ const ManageCars = () => {
       } catch (err) {
         setError("Failed to load cars");
       } finally {
-        setLoading(false);
+        setGlobalLoading(false);
       }
     };
     fetchCars();
@@ -466,6 +56,7 @@ const ManageCars = () => {
       setLoading(true);
       const formData = new FormData();
 
+      // For new cars, image is required.
       if (!currentCar?._id && !carData.image) {
         throw new Error("Image is required for new cars");
       }
@@ -483,19 +74,18 @@ const ManageCars = () => {
       });
 
       const config = {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       };
 
-      const { data } = currentCar?._id
+      const response = currentCar?._id
         ? await axiosInstance.put(`/cars/${currentCar._id}`, formData, config)
         : await axiosInstance.post("/cars", formData, config);
 
+      const updatedCar = response.data;
       setCars((prev) =>
         currentCar?._id
-          ? prev.map((c) => (c._id === data._id ? data : c))
-          : [data, ...prev]
+          ? prev.map((c) => (c._id === updatedCar._id ? updatedCar : c))
+          : [updatedCar, ...prev]
       );
       handleCloseDialog();
     } catch (err) {
@@ -506,12 +96,17 @@ const ManageCars = () => {
   };
 
   const handleDelete = async (carId) => {
-    if (!window.confirm("Are you sure you want to delete this car?")) return;
+    if (!window.confirm("Are you sure you want to remove this car?")) return;
     try {
-      await axiosInstance.delete(`/cars/${carId}`);
-      setCars((prev) => prev.filter((c) => c._id !== carId));
+      // Instead of permanently deleting, mark the car as "removed"
+      await axiosInstance.put(`/cars/${carId}/remove`);
+      setCars((prev) =>
+        prev.map((c) =>
+          c._id === carId ? { ...c, status: "removed", isAvailable: false } : c
+        )
+      );
     } catch (err) {
-      setError("Failed to delete car");
+      setError("Failed to remove car");
     }
   };
 
@@ -520,25 +115,27 @@ const ManageCars = () => {
     setCurrentCar(null);
   };
 
-  const filteredCars = cars.filter(
-    (car) =>
-      (filters.status === "all" ||
-        (filters.status === "available"
-          ? car.isAvailable
-          : !car.isAvailable)) &&
-      (filters.transmission === "all" ||
-        car.transmission === filters.transmission) &&
-      (filters.location === "all" || car.location === filters.location)
-  );
+  // Filter cars based on provided criteria
+  const filteredCars = cars.filter((car) => {
+    const statusMatch =
+      filters.status === "all" ||
+      (filters.status === "active" && car.status === "active") ||
+      (filters.status === "rented" &&
+        !car.isAvailable &&
+        car.status === "active") ||
+      (filters.status === "returned" && car.status === "returned") ||
+      (filters.status === "removed" && car.status === "removed");
+    const transmissionMatch =
+      filters.transmission === "all" ||
+      car.transmission === filters.transmission;
+    const locationMatch =
+      filters.location === "all" || car.location === filters.location;
+    return statusMatch && transmissionMatch && locationMatch;
+  });
 
-  if (loading)
-    return <CircularProgress sx={{ margin: "2rem auto", display: "block" }} />;
-  if (error)
-    return (
-      <Alert severity="error" sx={{ m: 2 }}>
-        {error}
-      </Alert>
-    );
+  if (globalLoading)
+    return <CircularProgress sx={{ m: 4, display: "block" }} />;
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
     <Box sx={{ p: 3 }}>
@@ -563,11 +160,12 @@ const ManageCars = () => {
             label="Status"
           >
             <MenuItem value="all">All</MenuItem>
-            <MenuItem value="available">Available</MenuItem>
+            <MenuItem value="active">Active</MenuItem>
             <MenuItem value="rented">Rented</MenuItem>
+            <MenuItem value="returned">Returned</MenuItem>
+            <MenuItem value="removed">Removed</MenuItem>
           </Select>
         </FormControl>
-
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Transmission</InputLabel>
           <Select
@@ -582,7 +180,6 @@ const ManageCars = () => {
             <MenuItem value="Automatic">Automatic</MenuItem>
           </Select>
         </FormControl>
-
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Location</InputLabel>
           <Select
@@ -629,24 +226,34 @@ const ManageCars = () => {
                     />
                   </Box>
                 )}
-
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography variant="h6">
                     {car.brand} {car.model}
                   </Typography>
                   <Chip
-                    label={car.isAvailable ? "Available" : "Rented"}
-                    color={car.isAvailable ? "success" : "error"}
+                    label={
+                      car.status === "removed"
+                        ? "Removed"
+                        : car.isAvailable
+                        ? "Available"
+                        : "Rented"
+                    }
+                    color={
+                      car.status === "removed"
+                        ? "default"
+                        : car.isAvailable
+                        ? "success"
+                        : "error"
+                    }
                   />
                 </Box>
-
                 <Box sx={{ mt: 1, display: "flex", gap: 1, flexWrap: "wrap" }}>
                   <Chip label={`Year: ${car.year}`} />
+                  <Chip label={`Mileage: ${car.mileage || "N/A"} km`} />
                   <Chip label={`Seats: ${car.seats}`} />
                   <Chip label={`Doors: ${car.doors}`} />
                   <Chip label={`$${car.pricePerDay}/day`} />
                 </Box>
-
                 <Box sx={{ mt: 2, display: "flex", gap: 1 }}>
                   <Button
                     startIcon={<Edit />}
@@ -662,7 +269,7 @@ const ManageCars = () => {
                     color="error"
                     onClick={() => handleDelete(car._id)}
                   >
-                    Delete
+                    Remove
                   </Button>
                 </Box>
               </CardContent>
@@ -688,6 +295,7 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
     model: "",
     year: "",
     pricePerDay: "",
+    mileage: "",
     seats: 5,
     doors: 4,
     transmission: "Manual",
@@ -696,18 +304,60 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
   });
   const [preview, setPreview] = useState(null);
 
+  // Revoke previous Blob URL when component unmounts or when preview changes
+  useEffect(() => {
+    return () => {
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
+
   useEffect(() => {
     if (currentCar) {
-      setFormData(currentCar);
+      setFormData({
+        brand: currentCar.brand,
+        model: currentCar.model,
+        year: currentCar.year,
+        pricePerDay: currentCar.pricePerDay,
+        mileage: currentCar.mileage || "",
+        seats: currentCar.seats,
+        doors: currentCar.doors,
+        transmission: currentCar.transmission,
+        location: currentCar.location,
+        image: currentCar.image, // When editing, image is already a URL string.
+      });
       setPreview(currentCar.image);
+    } else {
+      setFormData({
+        brand: "",
+        model: "",
+        year: "",
+        pricePerDay: "",
+        mileage: "",
+        seats: 5,
+        doors: 4,
+        transmission: "Manual",
+        location: "Main Branch",
+        image: null,
+      });
+      setPreview(null);
     }
   }, [currentCar]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Log the file for debugging
+      console.log("Selected file:", file);
+      // If a previous blob URL exists, revoke it
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
       setFormData((prev) => ({ ...prev, image: file }));
-      setPreview(URL.createObjectURL(file));
+      const url = URL.createObjectURL(file);
+      console.log("Generated preview URL:", url);
+      setPreview(url);
     }
   };
 
@@ -717,9 +367,9 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
       alert("Please upload an image for the car");
       return;
     }
-
     onSubmit(formData);
   };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>{currentCar ? "Edit Car" : "Add New Car"}</DialogTitle>
@@ -773,6 +423,18 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
           </Grid>
           <Grid item xs={6} md={4}>
             <TextField
+              label="Mileage (km)"
+              type="number"
+              fullWidth
+              value={formData.mileage}
+              onChange={(e) =>
+                setFormData({ ...formData, mileage: e.target.value })
+              }
+              required
+            />
+          </Grid>
+          <Grid item xs={6} md={4}>
+            <TextField
               label="Seats"
               type="number"
               fullWidth
@@ -781,6 +443,7 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
                 setFormData({ ...formData, seats: e.target.value })
               }
               required
+              inputProps={{ min: 1 }}
             />
           </Grid>
           <Grid item xs={6} md={4}>
@@ -793,6 +456,7 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
                 setFormData({ ...formData, doors: e.target.value })
               }
               required
+              inputProps={{ min: 1 }}
             />
           </Grid>
           <Grid item xs={6} md={4}>

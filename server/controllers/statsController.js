@@ -1,4 +1,3 @@
-// server/controllers/statsController.js
 import Rental from "../models/Rental.js";
 import Car from "../models/Car.js";
 import User from "../models/User.js";
@@ -6,7 +5,6 @@ import User from "../models/User.js";
 export const getStats = async (req, res) => {
   try {
     const [monthlyRevenue, popularCars, userActivity] = await Promise.all([
-      // Monthly revenue
       Rental.aggregate([
         {
           $group: {
@@ -18,30 +16,22 @@ export const getStats = async (req, res) => {
             count: { $sum: 1 },
           },
         },
-        {
-          $sort: { "_id.year": 1, "_id.month": 1 },
-        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } },
         {
           $project: {
             _id: 0,
             month: {
-              $dateToString: {
-                format: "%Y-%m",
-                date: {
-                  $dateFromParts: {
-                    year: "$_id.year",
-                    month: "$_id.month",
-                  },
-                },
-              },
+              $concat: [
+                { $toString: "$_id.year" },
+                "-",
+                { $substr: [{ $toString: "$_id.month" }, 0, 2] },
+              ],
             },
             revenue: 1,
             count: 1,
           },
         },
       ]),
-
-      // Popular cars
       Rental.aggregate([
         {
           $group: {
@@ -58,14 +48,12 @@ export const getStats = async (req, res) => {
             as: "carDetails",
           },
         },
-        {
-          $unwind: "$carDetails",
-        },
+        { $unwind: "$carDetails" },
         {
           $project: {
             _id: 0,
-            model: "$carDetails.model",
             brand: "$carDetails.brand",
+            model: "$carDetails.model",
             count: 1,
             totalRevenue: 1,
           },
@@ -73,8 +61,6 @@ export const getStats = async (req, res) => {
         { $sort: { count: -1 } },
         { $limit: 5 },
       ]),
-
-      // User activity
       Rental.aggregate([
         {
           $group: {
@@ -91,9 +77,7 @@ export const getStats = async (req, res) => {
             as: "userDetails",
           },
         },
-        {
-          $unwind: "$userDetails",
-        },
+        { $unwind: "$userDetails" },
         {
           $project: {
             _id: 0,
@@ -107,11 +91,7 @@ export const getStats = async (req, res) => {
       ]),
     ]);
 
-    res.json({
-      monthlyRevenue,
-      popularCars,
-      userActivity,
-    });
+    res.json({ monthlyRevenue, popularCars, userActivity });
   } catch (error) {
     console.error("Error fetching stats:", error);
     res.status(500).json({ message: "Error fetching statistics" });

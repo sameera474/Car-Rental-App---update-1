@@ -1,4 +1,3 @@
-// File: client/src/services/rentalService.js
 import axiosInstance from "./axiosInstance";
 
 export const createRental = async (rentalData) => {

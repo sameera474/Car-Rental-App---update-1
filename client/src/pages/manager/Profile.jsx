@@ -1,21 +1,58 @@
-// File: client/src/pages/manager/Profile.jsx
-import React from "react";
-import { Box, Typography, Paper, TextField, Button } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Typography,
+  Paper,
+  TextField,
+  Button,
+  Alert,
+} from "@mui/material";
+import axiosInstance from "../../services/axiosInstance";
 
 const ManagerProfile = () => {
-  const [profile, setProfile] = React.useState({
-    name: "Manager One",
-    email: "manager1@example.com",
-    phone: "987-654-3210",
+  const [profile, setProfile] = useState({
+    name: "",
+    email: "",
+    phone: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [error, setError] = useState("");
+
+  // Fetch profile on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data } = await axiosInstance.get("/users/profile");
+        setProfile(data);
+      } catch (err) {
+        setError("Failed to load profile");
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleChange = (e) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    console.log("Manager profile saved", profile);
+    setLoading(true);
+    setError("");
+    setSuccessMsg("");
+    try {
+      const { data } = await axiosInstance.put("/users/profile", profile);
+      setProfile(data.user);
+      setSuccessMsg("Profile updated successfully!");
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Error updating profile. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -23,6 +60,16 @@ const ManagerProfile = () => {
       <Typography variant="h4" gutterBottom>
         Manager Profile
       </Typography>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {successMsg && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {successMsg}
+        </Alert>
+      )}
       <Paper sx={{ p: 2, maxWidth: "400px" }}>
         <Box component="form" onSubmit={handleSave}>
           <TextField
@@ -32,6 +79,7 @@ const ManagerProfile = () => {
             value={profile.name}
             onChange={handleChange}
             margin="normal"
+            required
           />
           <TextField
             fullWidth
@@ -40,6 +88,7 @@ const ManagerProfile = () => {
             value={profile.email}
             onChange={handleChange}
             margin="normal"
+            required
           />
           <TextField
             fullWidth
@@ -54,8 +103,9 @@ const ManagerProfile = () => {
             variant="contained"
             color="primary"
             sx={{ mt: 2 }}
+            disabled={loading}
           >
-            Save
+            {loading ? "Saving..." : "Save"}
           </Button>
         </Box>
       </Paper>

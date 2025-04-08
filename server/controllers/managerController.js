@@ -1,5 +1,6 @@
 import Rental from "../models/Rental.js";
 import Car from "../models/Car.js";
+import User from "../models/User.js";
 
 export const approveRental = async (req, res) => {
   try {
@@ -13,31 +14,22 @@ export const approveRental = async (req, res) => {
   }
 };
 
-export const manageCars = async (req, res) => {
+export const lockUser = async (req, res) => {
   try {
-    const { carId, updateData } = req.body;
-    const car = await Car.findByIdAndUpdate(carId, updateData, { new: true });
-    res.json(car);
+    const { userId } = req.params;
+    await User.findByIdAndUpdate(userId, { status: "locked" });
+    res.json({ message: "User locked" });
   } catch (error) {
-    res.status(500).json({ message: "Error managing cars" });
+    res.status(500).json({ message: "Error locking user" });
   }
 };
 
 export const getReturnedCars = async (req, res) => {
   try {
-    const returnedCars = await Car.find({ isAvailable: false });
+    // Returned cars are those that have been processed after a rental
+    const returnedCars = await Car.find({ status: "returned" });
     res.json(returnedCars);
   } catch (error) {
     res.status(500).json({ message: "Error fetching returned cars" });
-  }
-};
-
-export const lockUser = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    await User.findByIdAndUpdate(userId, { locked: true });
-    res.json({ message: "User locked" });
-  } catch (error) {
-    res.status(500).json({ message: "Error locking user" });
   }
 };

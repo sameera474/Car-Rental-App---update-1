@@ -1,10 +1,8 @@
-// File: server/routes/userRoutes.js
 import express from "express";
 import {
   getUserProfile,
   updateUserProfile,
   getUserById,
-  getManagerStats,
   getAllUsers,
   updateUserStatus,
   createUser,
@@ -20,15 +18,6 @@ router.get("/:userId", protect, getUserById);
 router.get("/", protect, authorize("manager"), getAllUsers);
 router.put("/:id/status", protect, authorize("manager"), updateUserStatus);
 router.post("/", protect, authorize("admin"), createUser);
-
-router.delete(
-  "/:id",
-  protect,
-  authorize("admin"), // Only allow admins to delete users
-  deleteUser
-);
-
-// Boss-specific route
-router.get("/managers/stats", protect, authorize("boss"), getManagerStats);
+router.delete("/:id", protect, authorize("admin"), deleteUser);
 
 export default router;

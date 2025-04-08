@@ -1,4 +1,3 @@
-// client/src/pages/manager/Dashboard.jsx
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -8,6 +7,7 @@ import {
   CardContent,
   CircularProgress,
   Alert,
+  Button,
 } from "@mui/material";
 import {
   AttachMoney,
@@ -15,32 +15,35 @@ import {
   CheckCircle,
   PendingActions,
 } from "@mui/icons-material";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import axiosInstance from "../../services/axiosInstance";
 
 const ManagerDashboard = () => {
   const [stats, setStats] = useState(null);
+  const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchDashboardStats = async () => {
       try {
-        const { data } = await axiosInstance.get("/rentals/stats");
-
-        // Validate response structure
-        if (!data || typeof data !== "object") {
-          throw new Error("Invalid data format received");
-        }
-
-        // Process and sanitize data
-        const processedStats = {
+        // Call your custom dashboard stats endpoint from rentalRoutes
+        const { data } = await axiosInstance.get("/rentals/dashboard-stats");
+        setStats({
           totalRevenue: data.totalRevenue || 0,
           availableCars: data.availableCars || 0,
           completedRentals: data.completedRentals || 0,
           pendingRequests: data.pendingRequests || 0,
-        };
-
-        setStats(processedStats);
+        });
+        setChartData(data.monthlyRevenue || []);
       } catch (err) {
         console.error("Dashboard error:", err);
         setError(
@@ -53,7 +56,7 @@ const ManagerDashboard = () => {
       }
     };
 
-    fetchStats();
+    fetchDashboardStats();
   }, []);
 
   if (loading) {
@@ -63,7 +66,6 @@ const ManagerDashboard = () => {
       </Box>
     );
   }
-
   if (error) {
     return (
       <Box sx={{ p: 3 }}>
@@ -84,7 +86,6 @@ const ManagerDashboard = () => {
       </Typography>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Cards with null checks */}
         <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
@@ -93,7 +94,7 @@ const ManagerDashboard = () => {
                 <div>
                   <Typography variant="h6">Total Revenue</Typography>
                   <Typography variant="h4">
-                    ${stats?.totalRevenue?.toLocaleString() || "0"}
+                    ${stats.totalRevenue.toLocaleString()}
                   </Typography>
                 </div>
               </Box>
@@ -107,13 +108,12 @@ const ManagerDashboard = () => {
                 <DirectionsCar fontSize="large" />
                 <div>
                   <Typography variant="h6">Available Cars</Typography>
-                  <Typography variant="h4">{stats?.availableCars}</Typography>
+                  <Typography variant="h4">{stats.availableCars}</Typography>
                 </div>
               </Box>
             </CardContent>
           </Card>
         </Grid>
-
         <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
@@ -121,15 +121,12 @@ const ManagerDashboard = () => {
                 <CheckCircle fontSize="large" />
                 <div>
                   <Typography variant="h6">Completed Rentals</Typography>
-                  <Typography variant="h4">
-                    {stats?.completedRentals}
-                  </Typography>
+                  <Typography variant="h4">{stats.completedRentals}</Typography>
                 </div>
               </Box>
             </CardContent>
           </Card>
         </Grid>
-
         <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
@@ -137,7 +134,7 @@ const ManagerDashboard = () => {
                 <PendingActions fontSize="large" />
                 <div>
                   <Typography variant="h6">Pending Requests</Typography>
-                  <Typography variant="h4">{stats?.pendingRequests}</Typography>
+                  <Typography variant="h4">{stats.pendingRequests}</Typography>
                 </div>
               </Box>
             </CardContent>
@@ -145,7 +142,20 @@ const ManagerDashboard = () => {
         </Grid>
       </Grid>
 
-      {/* Add charts section */}
+      <Typography variant="h5" gutterBottom>
+        Monthly Revenue Overview
+      </Typography>
+      <Box sx={{ height: 300 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" />
+            <YAxis />
+            <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+            <Bar dataKey="revenue" fill="#8884d8" name="Revenue" />
+          </BarChart>
+        </ResponsiveContainer>
+      </Box>
     </Box>
   );
 };
