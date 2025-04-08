@@ -1,4 +1,3 @@
-// File: client/src/pages/boss/Dashboard.jsx
 import React, { useState, useEffect } from "react";
 import { Box, Typography, Paper, Grid, CircularProgress } from "@mui/material";
 import axiosInstance from "../../services/axiosInstance";
@@ -11,7 +10,8 @@ const BossDashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axiosInstance.get("/api/admin/financial-report");
+        // Use "/boss/financial-report" (baseURL already contains "/api")
+        const response = await axiosInstance.get("/boss/financial-report");
         setStats(response.data);
       } catch (error) {
         console.error("Error fetching stats:", error);
@@ -33,7 +33,9 @@ const BossDashboard = () => {
             </Typography>
             {stats ? (
               <>
-                <Typography>Total Revenue: ${stats.totalRevenue}</Typography>
+                <Typography>
+                  Total Revenue: ${stats.totalRevenue.toLocaleString()}
+                </Typography>
                 <Typography>Total Rentals: {stats.totalRentals}</Typography>
                 <Typography>Active Managers: {stats.activeManagers}</Typography>
               </>
@@ -47,7 +49,7 @@ const BossDashboard = () => {
             <Typography variant="h6" gutterBottom>
               Recent Activity
             </Typography>
-            {/* Add recent activity list */}
+            {/* Add a recent activity list if desired */}
           </Paper>
         </Grid>
         <Grid item xs={12}>

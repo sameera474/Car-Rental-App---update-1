@@ -1,4 +1,3 @@
-// File: server/server.js
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
@@ -9,7 +8,8 @@ import userRoutes from "./routes/userRoutes.js";
 import carRoutes from "./routes/carRoutes.js";
 import rentalRoutes from "./routes/rentalRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
-import adminRoutes from "./routes/adminRoutes.js"; // Fixed import
+import bossRoutes from "./routes/bossRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 const app = express();
 
@@ -26,7 +26,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/cars", carRoutes);
 app.use("/api/rentals", rentalRoutes);
 app.use("/api/reviews", reviewRoutes);
-app.use("/api/admin", adminRoutes); // Fixed reference
+app.use("/api/boss", bossRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Error Handling
 app.use((err, req, res, next) => {

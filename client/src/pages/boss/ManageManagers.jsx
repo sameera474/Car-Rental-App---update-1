@@ -1,4 +1,3 @@
-// File: client/src/pages/boss/ManageManagers.jsx
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -14,6 +13,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Alert,
 } from "@mui/material";
 import axiosInstance from "../../services/axiosInstance";
 
@@ -21,14 +21,17 @@ const ManageManagers = () => {
   const [managers, setManagers] = useState([]);
   const [newManagerEmail, setNewManagerEmail] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchManagers = async () => {
       try {
-        const response = await axiosInstance.get("/api/admin/managers");
+        // Use "/boss/managers" – this route must be defined on the back end.
+        const response = await axiosInstance.get("/boss/managers");
         setManagers(response.data);
       } catch (error) {
         console.error("Error fetching managers:", error);
+        setError("Failed to load managers");
       }
     };
     fetchManagers();
@@ -36,11 +39,11 @@ const ManageManagers = () => {
 
   const handleAddManager = async () => {
     try {
-      await axiosInstance.post("/api/admin/manage-managers", {
+      await axiosInstance.post("/boss/manage-managers", {
         email: newManagerEmail,
         action: "promote",
       });
-      const response = await axiosInstance.get("/api/admin/managers");
+      const response = await axiosInstance.get("/boss/managers");
       setManagers(response.data);
       setOpenDialog(false);
     } catch (error) {
@@ -50,11 +53,11 @@ const ManageManagers = () => {
 
   const handleRemoveManager = async (userId) => {
     try {
-      await axiosInstance.post("/api/admin/manage-managers", {
+      await axiosInstance.post("/boss/manage-managers", {
         userId,
         action: "demote",
       });
-      const response = await axiosInstance.get("/api/admin/managers");
+      const response = await axiosInstance.get("/boss/managers");
       setManagers(response.data);
     } catch (error) {
       alert(error.response?.data?.message || "Operation failed");
@@ -66,7 +69,7 @@ const ManageManagers = () => {
       <Typography variant="h4" gutterBottom>
         Manage Managers
       </Typography>
-
+      {error && <Alert severity="error">{error}</Alert>}
       <Button
         variant="contained"
         color="primary"
@@ -75,7 +78,6 @@ const ManageManagers = () => {
       >
         Add New Manager
       </Button>
-
       <Paper sx={{ p: 2 }}>
         <List>
           {managers.map((manager) => (
@@ -98,7 +100,6 @@ const ManageManagers = () => {
           ))}
         </List>
       </Paper>
-
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
         <DialogTitle>Add New Manager</DialogTitle>
         <DialogContent>

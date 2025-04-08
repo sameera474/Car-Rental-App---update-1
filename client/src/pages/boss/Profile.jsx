@@ -1,22 +1,26 @@
-// File: client/src/pages/boss/Profile.jsx
 import React, { useState, useEffect } from "react";
-import { Box, Typography, Paper, TextField, Button } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Paper,
+  TextField,
+  Button,
+  Alert,
+} from "@mui/material";
 import axiosInstance from "../../services/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
 
 const BossProfile = () => {
   const { user, login } = useAuth();
-  const [profile, setProfile] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+  const [profile, setProfile] = useState({ name: "", email: "", phone: "" });
+  const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
     if (user) {
       setProfile({
-        name: user.name,
-        email: user.email,
+        name: user.name || "",
+        email: user.email || "",
         phone: user.phone || "",
       });
     }
@@ -25,11 +29,13 @@ const BossProfile = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      const response = await axiosInstance.put("/api/users/profile", profile);
+      const response = await axiosInstance.put("/users/profile", profile);
       login(response.data.user, response.data.token);
-      alert("Profile updated successfully!");
+      setSuccessMsg("Profile updated successfully!");
+      setError("");
     } catch (error) {
-      alert(error.response?.data?.message || "Update failed");
+      setError(error.response?.data?.message || "Update failed");
+      setSuccessMsg("");
     }
   };
 
@@ -38,6 +44,16 @@ const BossProfile = () => {
       <Typography variant="h4" gutterBottom>
         Boss Profile
       </Typography>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {successMsg && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {successMsg}
+        </Alert>
+      )}
       <Paper sx={{ p: 2, maxWidth: "400px" }}>
         <Box component="form" onSubmit={handleSave}>
           <TextField
