@@ -29,7 +29,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/boss", bossRoutes);
 app.use("/api/admin", adminRoutes);
 
-// Error Handling
+// Global error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Internal Server Error" });

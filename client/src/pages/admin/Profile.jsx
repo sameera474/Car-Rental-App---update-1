@@ -1,21 +1,42 @@
-// File: client/src/pages/admin/Profile.jsx
-import React from "react";
-import { Box, Typography, Paper, TextField, Button } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Typography,
+  Paper,
+  TextField,
+  Button,
+  Alert,
+} from "@mui/material";
+import axiosInstance from "../../services/axiosInstance";
+import { useAuth } from "../../context/AuthContext";
 
 const AdminProfile = () => {
-  const [profile, setProfile] = React.useState({
-    name: "Admin User",
-    email: "admin@example.com",
-    phone: "000-000-0000",
-  });
+  const { user, login } = useAuth();
+  const [profile, setProfile] = useState({ name: "", email: "", phone: "" });
+  const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
-  const handleChange = (e) => {
-    setProfile({ ...profile, [e.target.name]: e.target.value });
-  };
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+      });
+    }
+  }, [user]);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    console.log("Admin profile saved", profile);
+    try {
+      const response = await axiosInstance.put("/users/profile", profile);
+      login(response.data.user, response.data.token);
+      setSuccessMsg("Profile updated successfully!");
+      setError("");
+    } catch (error) {
+      setError(error.response?.data?.message || "Update failed");
+      setSuccessMsg("");
+    }
   };
 
   return (
@@ -23,6 +44,16 @@ const AdminProfile = () => {
       <Typography variant="h4" gutterBottom>
         Admin Profile
       </Typography>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {successMsg && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {successMsg}
+        </Alert>
+      )}
       <Paper sx={{ p: 2, maxWidth: "400px" }}>
         <Box component="form" onSubmit={handleSave}>
           <TextField
@@ -30,23 +61,26 @@ const AdminProfile = () => {
             label="Name"
             name="name"
             value={profile.name}
-            onChange={handleChange}
+            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
             margin="normal"
+            required
           />
           <TextField
             fullWidth
             label="Email"
             name="email"
+            type="email"
             value={profile.email}
-            onChange={handleChange}
+            onChange={(e) => setProfile({ ...profile, email: e.target.value })}
             margin="normal"
+            required
           />
           <TextField
             fullWidth
             label="Phone"
             name="phone"
             value={profile.phone}
-            onChange={handleChange}
+            onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
             margin="normal"
           />
           <Button

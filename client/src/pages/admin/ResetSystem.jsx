@@ -21,6 +21,7 @@ const ResetSystem = () => {
     try {
       setLoading(true);
       setError("");
+      // Call the reset system endpoint, for example, POST /admin/reset-system
       await axiosInstance.post("/admin/reset-system");
       alert("System reset successfully! Logging out...");
       window.location.href = "/login";
@@ -37,15 +38,14 @@ const ResetSystem = () => {
       <Typography variant="h4" gutterBottom>
         System Reset
       </Typography>
-
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
-
       <Typography variant="body1" gutterBottom>
-        <strong>Warning:</strong> This will permanently delete all:
+        <strong>Warning:</strong> This will permanently delete all data except
+        admin accounts:
       </Typography>
       <ul>
         <li>All cars</li>
@@ -53,7 +53,6 @@ const ResetSystem = () => {
         <li>All reviews</li>
         <li>All users (except admins)</li>
       </ul>
-
       <Button
         variant="contained"
         color="error"
@@ -62,7 +61,6 @@ const ResetSystem = () => {
       >
         Initiate System Reset
       </Button>
-
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>Confirm Full System Reset</DialogTitle>
         <DialogContent>

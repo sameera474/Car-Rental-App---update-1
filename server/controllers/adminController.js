@@ -1,9 +1,11 @@
 import Rental from "../models/Rental.js";
-import User from "../models/User.js";
 import Car from "../models/Car.js";
 import Review from "../models/Review.js";
+import User from "../models/User.js";
 
-// Get all bosses
+/**
+ * Get all bosses.
+ */
 export const getBosses = async (req, res) => {
   try {
     const bosses = await User.find({ role: "boss" }).select("-password");
@@ -13,7 +15,9 @@ export const getBosses = async (req, res) => {
   }
 };
 
-// Promote user to boss
+/**
+ * Promote a user to boss.
+ */
 export const promoteToBoss = async (req, res) => {
   try {
     const user = await User.findOneAndUpdate(
@@ -28,11 +32,13 @@ export const promoteToBoss = async (req, res) => {
 
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: "Promotion failed" });
+    res.status(500).json({ message: "Promotion failed", error: error.message });
   }
 };
 
-// Demote boss to user
+/**
+ * Demote a boss to a regular user.
+ */
 export const demoteBoss = async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(
@@ -47,11 +53,14 @@ export const demoteBoss = async (req, res) => {
 
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: "Demotion failed" });
+    res.status(500).json({ message: "Demotion failed", error: error.message });
   }
 };
 
-// Full system reset
+/**
+ * Reset the entire system.
+ * Deletes: all rentals, all cars, all reviews, and all users (except those with role "admin").
+ */
 export const resetSystem = async (req, res) => {
   try {
     await Promise.all([
@@ -60,9 +69,8 @@ export const resetSystem = async (req, res) => {
       Review.deleteMany(),
       User.deleteMany({ role: { $nin: ["admin"] } }),
     ]);
-
     res.json({ message: "System reset successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Reset failed" });
+    res.status(500).json({ message: "Reset failed", error: error.message });
   }
 };

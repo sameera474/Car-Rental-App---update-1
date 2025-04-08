@@ -1,6 +1,7 @@
-// File: client/src/pages/admin/Dashboard.jsx
 import React from "react";
 import { Box, Typography, Paper, Grid } from "@mui/material";
+import ManageBosses from "./ManageBosses";
+import ResetSystem from "./ResetSystem";
 
 const AdminDashboard = () => {
   return (
@@ -9,19 +10,19 @@ const AdminDashboard = () => {
         Admin Dashboard
       </Typography>
       <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6">System Overview</Typography>
             <Typography variant="body1">
-              Statistics and system status.
+              Statistics and system status go here.
             </Typography>
           </Paper>
         </Grid>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6">Recent Logs</Typography>
-            <Typography variant="body1">Recent system activity.</Typography>
-          </Paper>
+        <Grid item xs={12}>
+          <ManageBosses />
+        </Grid>
+        <Grid item xs={12}>
+          <ResetSystem />
         </Grid>
       </Grid>
     </Box>
