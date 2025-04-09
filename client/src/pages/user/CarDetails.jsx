@@ -1,4 +1,3 @@
-// File: client/src/pages/user/CarDetails.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
@@ -50,7 +49,6 @@ const CarDetails = () => {
         navigate("/login");
         return;
       }
-
       await createRental({
         carId: car._id,
         startDate: rentalDates.start.toISOString(),
@@ -71,7 +69,6 @@ const CarDetails = () => {
       </Box>
     );
   }
-
   if (error) {
     return (
       <Box sx={{ p: 3 }}>

@@ -1,16 +1,16 @@
+// File: server/routes/reviewRoutes.js
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js";
 import {
   createReview,
   getCarReviews,
+  getUserReviews, // Import the new function
 } from "../controllers/reviewController.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// POST /api/reviews - Create review
 router.post("/", protect, createReview);
-
-// GET /api/reviews/car/:carId - Get car reviews
 router.get("/car/:carId", getCarReviews);
+router.get("/user/:userId", protect, getUserReviews); // NEW route for user reviews
 
 export default router;

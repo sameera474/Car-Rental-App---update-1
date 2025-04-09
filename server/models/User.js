@@ -1,3 +1,4 @@
+// File: server/models/User.js
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
@@ -24,6 +25,7 @@ const UserSchema = new mongoose.Schema({
     default: "user",
   },
   status: { type: String, enum: ["active", "locked"], default: "active" },
+  phone: { type: String, default: "" }, // New phone field added
   createdAt: { type: Date, default: Date.now },
 });
 

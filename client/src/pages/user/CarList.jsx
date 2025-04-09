@@ -5,69 +5,12 @@ import {
   Card,
   CardContent,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  TextField,
+  Grid,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import axiosInstance from "../../services/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
-
-// Create a reusable RentalDialog component
-const RentalDialog = ({ car, open, onClose, onRent }) => {
-  const [rentalDates, setRentalDates] = useState({
-    start: new Date(),
-    end: new Date(Date.now() + 86400000),
-  });
-
-  const handleRentClick = () => {
-    onRent(car._id, rentalDates);
-    onClose();
-  };
-
-  return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>
-        Confirm Rental for {car?.brand} {car?.model}
-      </DialogTitle>
-      <DialogContent>
-        <TextField
-          label="Start Date"
-          type="date"
-          value={rentalDates.start.toISOString().split("T")[0]}
-          onChange={(e) =>
-            setRentalDates({
-              ...rentalDates,
-              start: new Date(e.target.value),
-            })
-          }
-          fullWidth
-          sx={{ mt: 2 }}
-          InputLabelProps={{ shrink: true }}
-        />
-        <TextField
-          label="End Date"
-          type="date"
-          value={rentalDates.end.toISOString().split("T")[0]}
-          onChange={(e) =>
-            setRentalDates({ ...rentalDates, end: new Date(e.target.value) })
-          }
-          fullWidth
-          sx={{ mt: 2 }}
-          InputLabelProps={{ shrink: true }}
-        />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleRentClick}>
-          Confirm Rental
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
+import RentalDialog from "./RentalDialog";
 
 const CarList = () => {
   const [cars, setCars] = useState([]);
@@ -92,14 +35,12 @@ const CarList = () => {
       navigate("/login");
       return;
     }
-
     try {
       await axiosInstance.post("/rentals", {
         carId,
         startDate: dates.start.toISOString(),
         endDate: dates.end.toISOString(),
       });
-
       // Refresh available cars
       const { data } = await axiosInstance.get("/cars/available");
       setCars(data);
@@ -114,30 +55,55 @@ const CarList = () => {
       <Typography variant="h4" gutterBottom>
         Available Cars
       </Typography>
-
-      {cars.map((car) => (
-        <Card key={car._id} sx={{ mb: 2 }}>
-          <CardContent>
-            <Typography variant="h6">
-              {car.brand} {car.model}
-            </Typography>
-            <Typography>Price per day: ${car.pricePerDay}</Typography>
-            <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
-              <Button variant="contained" onClick={() => setSelectedCar(car)}>
-                Rent Now
-              </Button>
-              <Button
-                component={Link}
-                to={`/cars/${car._id}`}
-                variant="outlined"
-              >
-                View Details
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
-      ))}
-
+      <Grid container spacing={3}>
+        {cars.map((car) => (
+          <Grid item xs={12} sm={6} md={4} key={car._id}>
+            <Card sx={{ mb: 2 }}>
+              <CardContent>
+                {car.image && (
+                  <Box
+                    sx={{
+                      height: 200,
+                      mb: 2,
+                      borderRadius: 2,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <img
+                      src={car.image}
+                      alt={`${car.brand} ${car.model}`}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  </Box>
+                )}
+                <Typography variant="h6">
+                  {car.brand} {car.model}
+                </Typography>
+                <Typography>Price per day: ${car.pricePerDay}</Typography>
+                <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
+                  <Button
+                    variant="contained"
+                    onClick={() => setSelectedCar(car)}
+                  >
+                    Rent Now
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    component={Link}
+                    to={`/cars/${car._id}`}
+                  >
+                    View Details
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
       <RentalDialog
         car={selectedCar}
         open={Boolean(selectedCar)}
