@@ -3,7 +3,10 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
 const UserSchema = new mongoose.Schema({
-  name: { type: String, required: [true, "Please add a name"] },
+  name: {
+    type: String,
+    required: [true, "Please add a name"],
+  },
   email: {
     type: String,
     required: [true, "Please add an email"],
@@ -24,9 +27,23 @@ const UserSchema = new mongoose.Schema({
     enum: ["user", "manager", "boss", "admin"],
     default: "user",
   },
-  status: { type: String, enum: ["active", "locked"], default: "active" },
-  phone: { type: String, default: "" }, // New phone field added
-  createdAt: { type: Date, default: Date.now },
+  status: {
+    type: String,
+    enum: ["active", "locked"],
+    default: "active",
+  },
+  phone: {
+    type: String,
+    default: "",
+  },
+  avatar: {
+    type: String,
+    default: "", // <-- New field to store profile image URL
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 UserSchema.pre("save", async function (next) {

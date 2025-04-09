@@ -106,16 +106,19 @@ const NavBar = () => {
             onClick={(e) => setAnchorEl(e.currentTarget)}
             color="inherit"
           >
-            <Avatar sx={{ bgcolor: "secondary.main" }}>
-              {user.name ? user.name.charAt(0).toUpperCase() : "U"}
-            </Avatar>
+            {user.avatar ? (
+              <Avatar alt={user.name} src={user.avatar} />
+            ) : (
+              <Avatar sx={{ bgcolor: "secondary.main" }}>
+                {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+              </Avatar>
+            )}
           </IconButton>
           <Menu
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
             onClose={() => setAnchorEl(null)}
           >
-            {/* Only profile link is placed in the avatar menu */}
             <MenuItem
               component={Link}
               to={profilePath}

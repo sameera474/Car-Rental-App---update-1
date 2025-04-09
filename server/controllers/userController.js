@@ -19,6 +19,15 @@ export const updateUserProfile = async (req, res) => {
       email: req.body.email,
       phone: req.body.phone,
     };
+
+    if (req.file) {
+      const protocol = req.protocol;
+      const host = req.get("host");
+      updates.avatar = `${protocol}://${host}/uploads/${req.file.filename}`;
+    } else if (req.body.avatar) {
+      // If you're sending an existing URL from the client.
+      updates.avatar = req.body.avatar;
+    }
     const user = await User.findByIdAndUpdate(req.user._id, updates, {
       new: true,
       runValidators: true,

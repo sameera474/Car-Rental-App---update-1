@@ -3,7 +3,8 @@ import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
-import { upload } from "../controllers/carController.js";
+
+// Removed: import { upload } from "../controllers/carController.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadDir = path.join(__dirname, "../uploads");
@@ -42,4 +43,5 @@ export const upload = multer({
   },
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
+
 export default upload.single("image");
