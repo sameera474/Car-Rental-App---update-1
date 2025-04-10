@@ -1,6 +1,12 @@
-// File: client/src/pages/public/Register.jsx
 import React, { useState } from "react";
-import { TextField, Button, Box, Typography, MenuItem } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Box,
+  Typography,
+  MenuItem,
+  Divider,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../../services/authService";
 
@@ -47,6 +53,16 @@ const Register = () => {
     }
   };
 
+  const handleGoogleRegister = () => {
+    // Replace with your actual Google OAuth flow.
+    alert("Google registration coming soon!");
+  };
+
+  const handleAppleRegister = () => {
+    // Replace with your actual Apple OAuth flow.
+    alert("Apple registration coming soon!");
+  };
+
   return (
     <Box
       display="flex"
@@ -54,6 +70,7 @@ const Register = () => {
       alignItems="center"
       justifyContent="center"
       minHeight="80vh"
+      sx={{ p: 2 }}
     >
       <Typography variant="h4" gutterBottom>
         Register
@@ -113,22 +130,46 @@ const Register = () => {
           <MenuItem value="boss">Boss</MenuItem>
           <MenuItem value="admin">Admin</MenuItem>
         </TextField>
-
         {error && (
           <Typography color="error" variant="body2" sx={{ mt: 1 }}>
             {error}
           </Typography>
         )}
-
         <Button
           type="submit"
           variant="contained"
           color="primary"
           fullWidth
           disabled={loading}
-          sx={{ marginTop: "16px" }}
+          sx={{ mt: 2 }}
         >
           {loading ? "Registering..." : "Register"}
+        </Button>
+      </Box>
+      <Divider sx={{ width: "300px", my: 2 }}>OR</Divider>
+      <Box
+        sx={{
+          width: "300px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 1,
+        }}
+      >
+        <Button
+          variant="outlined"
+          color="primary"
+          fullWidth
+          onClick={handleGoogleRegister}
+        >
+          Continue with Google
+        </Button>
+        <Button
+          variant="outlined"
+          color="primary"
+          fullWidth
+          onClick={handleAppleRegister}
+        >
+          Continue with Apple
         </Button>
       </Box>
     </Box>

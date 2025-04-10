@@ -1,3 +1,4 @@
+// File: server/models/Car.js
 import mongoose from "mongoose";
 
 const CarSchema = new mongoose.Schema(
@@ -14,14 +15,17 @@ const CarSchema = new mongoose.Schema(
     doors: { type: Number, default: 5 },
     transmission: { type: String, default: "Manual" },
     location: { type: String, default: "Main Branch" },
-    image: { type: String, required: false },
+    image: { type: String }, // Main image URL
+    // New field: an array of additional image URLs (gallery)
+    gallery: { type: [String], default: [] },
     isAvailable: { type: Boolean, default: true },
-    // For soft deletion and additional status tracking
     status: {
       type: String,
       enum: ["active", "returned", "removed"],
       default: "active",
     },
+    featured: { type: Boolean, default: false },
+    category: { type: String, default: "Economy" },
   },
   { timestamps: true }
 );

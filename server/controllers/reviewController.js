@@ -75,6 +75,7 @@ export const createReview = async (req, res) => {
 };
 
 // Existing function for getting reviews by car
+
 export const getCarReviews = async (req, res) => {
   try {
     const reviews = await Review.find({ car: req.params.carId })
@@ -82,13 +83,12 @@ export const getCarReviews = async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(reviews);
   } catch (error) {
-    console.error("Get reviews error:", error);
+    console.error("Error fetching reviews:", error);
     res
       .status(500)
       .json({ message: error.message || "Error fetching reviews" });
   }
 };
-
 // NEW: Function to get reviews submitted by a user
 export const getUserReviews = async (req, res) => {
   try {
@@ -102,5 +102,14 @@ export const getUserReviews = async (req, res) => {
     res
       .status(500)
       .json({ message: error.message || "Error fetching reviews" });
+  }
+};
+export const getRecentReviews = async (req, res) => {
+  try {
+    const recentReviews = await Review.find().sort({ createdAt: -1 }).limit(5);
+    res.json(recentReviews);
+  } catch (error) {
+    console.error("Error fetching recent reviews:", error);
+    res.status(500).json({ message: "Error fetching recent reviews" });
   }
 };
