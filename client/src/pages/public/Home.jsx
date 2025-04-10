@@ -14,15 +14,12 @@ import { Link } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 import axiosInstance from "../../services/axiosInstance";
 
-// Import react-slick and its CSS
+// Import react-slick and required CSS
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
-// Import custom slider CSS override
-import "../../styles/sliderOverrides.css";
-
-// Placeholder image
+// A valid placeholder image URL (verify that it resolves)
 const DEFAULT_CAR_IMAGE = "https://via.placeholder.com/300x150?text=No+Image";
 
 const Home = () => {
@@ -32,12 +29,12 @@ const Home = () => {
   const [testimonials, setTestimonials] = useState([]);
   const [error, setError] = useState("");
 
-  // Common slider settings for both Featured and Popular vehicles
+  // Use identical slider settings for both Featured and Popular sections.
   const vehicleSliderSettings = {
     dots: true,
     infinite: true,
     speed: 500,
-    slidesToShow: 3, // Show 3 slides in desktop mode
+    slidesToShow: 3, // Show 3 cards per view on desktop
     slidesToScroll: 1,
     autoplay: true,
     autoplaySpeed: 3000,
@@ -59,7 +56,7 @@ const Home = () => {
     responsive: [{ breakpoint: 960, settings: { slidesToShow: 1 } }],
   };
 
-  // Fetch data from backend endpoints
+  // Fetch home page data from backend endpoints.
   const fetchHomeData = async () => {
     try {
       const [featuredRes, popularRes, categoriesRes, reviewsRes] =
@@ -70,7 +67,7 @@ const Home = () => {
           axiosInstance.get("/reviews/recent"),
         ]);
 
-      // Remove vehicles from featured if they are also in popular (optional)
+      // Optionally remove vehicles from featured if they also appear in popular.
       const popularIDs = new Set(popularRes.data.map((car) => car._id));
       const filteredFeatured = featuredRes.data.filter(
         (car) => !popularIDs.has(car._id)
@@ -78,6 +75,7 @@ const Home = () => {
       setFeaturedVehicles(
         filteredFeatured.length > 0 ? filteredFeatured : featuredRes.data
       );
+
       setPopularVehicles(popularRes.data);
       setCategories(categoriesRes.data);
       setTestimonials(reviewsRes.data);
