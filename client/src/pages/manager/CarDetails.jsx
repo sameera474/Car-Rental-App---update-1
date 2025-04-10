@@ -1,119 +1,201 @@
-import React, { useState, useEffect } from "react";
+// File: client/src/pages/user/CarDetails.jsx
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Box,
   Typography,
+  Paper,
+  Button,
   CircularProgress,
-  Alert,
-  Card,
-  CardContent,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
 } from "@mui/material";
-import axiosInstance from "../../services/axiosInstance";
+import { fetchCarById } from "../../services/carService";
+import { createRental } from "../../services/rentalService";
+import { useAuth } from "../../context/AuthContext";
+import GalleryCarousel from "../../components/GalleryCarousel";
 
-const CarDetails = ({ match }) => {
-  const carId = match.params.id; // Or use useParams() from react-router-dom v6+
+const CarDetails = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [car, setCar] = useState(null);
-  const [rentalHistory, setRentalHistory] = useState([]);
-  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
+  const [showRentalDialog, setShowRentalDialog] = useState(false);
+  const [rentalDates, setRentalDates] = useState({
+    start: new Date(),
+    end: new Date(Date.now() + 86400000),
+  });
 
   useEffect(() => {
-    const fetchCarDetails = async () => {
+    const getCar = async () => {
       try {
-        const { data } = await axiosInstance.get(`/cars/${carId}`);
+        const data = await fetchCarById(id);
         setCar(data);
-        // Assume you have endpoints for rental history and reviews
-        const rentalRes = await axiosInstance.get(`/rentals/car/${carId}`);
-        setRentalHistory(rentalRes.data);
-        const reviewsRes = await axiosInstance.get(`/reviews/car/${carId}`);
-        setReviews(reviewsRes.data);
       } catch (err) {
-        setError("Failed to load car details");
+        setError("Failed to load car details.");
       } finally {
         setLoading(false);
       }
     };
-    fetchCarDetails();
-  }, [carId]);
+    getCar();
+  }, [id]);
 
-  if (loading) return <CircularProgress />;
-  if (error) return <Alert severity="error">{error}</Alert>;
+  const handleRent = async () => {
+    try {
+      if (!user && !authLoading) {
+        navigate("/login");
+        return;
+      }
+      await createRental({
+        carId: car._id,
+        startDate: rentalDates.start.toISOString(),
+        endDate: rentalDates.end.toISOString(),
+      });
+      navigate("/user/myrentals");
+    } catch (err) {
+      setError(err.message || "Rental creation failed.");
+    } finally {
+      setShowRentalDialog(false);
+    }
+  };
+
+  if (loading || authLoading) {
+    return (
+      <Box sx={{ p: 3, display: "flex", justifyContent: "center" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        {car.brand} {car.model} Details
-      </Typography>
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          {car.image && (
-            <Box
-              component="img"
+      <Paper sx={{ p: 2 }}>
+        <Typography variant="h4" gutterBottom>
+          {car.brand} {car.model}
+        </Typography>
+        {car.image && (
+          <Box
+            sx={{
+              mt: 2,
+              mb: 4,
+              display: "flex",
+              justifyContent: "center",
+              borderRadius: "8px",
+              overflow: "hidden",
+            }}
+          >
+            <img
               src={car.image}
               alt={`${car.brand} ${car.model}`}
-              sx={{ width: "100%", height: 300, objectFit: "cover", mb: 2 }}
+              style={{
+                maxWidth: "100%",
+                height: "300px",
+                objectFit: "cover",
+              }}
             />
-          )}
-          <Typography variant="body1">
-            <strong>Year:</strong> {car.year}
-          </Typography>
-          <Typography variant="body1">
-            <strong>Mileage:</strong> {car.mileage} km
-          </Typography>
-          <Typography variant="body1">
-            <strong>Price per day:</strong> ${car.pricePerDay}
-          </Typography>
-          <Typography variant="body1">
-            <strong>Transmission:</strong> {car.transmission}
-          </Typography>
-          <Typography variant="body1">
-            <strong>Location:</strong> {car.location}
-          </Typography>
-          <Typography variant="body1">
-            <strong>Status:</strong> {car.status}
-          </Typography>
-        </CardContent>
-      </Card>
-      <Typography variant="h5" gutterBottom>
-        Rental History
-      </Typography>
-      <List>
-        {rentalHistory.map((rental) => (
-          <React.Fragment key={rental._id}>
-            <ListItem>
-              <ListItemText
-                primary={`Rented by: ${rental.user?.email}`}
-                secondary={`From: ${new Date(
-                  rental.startDate
-                ).toLocaleDateString()} To: ${new Date(
-                  rental.endDate
-                ).toLocaleDateString()} | Total: $${rental.totalCost}`}
-              />
-            </ListItem>
-            <Divider />
-          </React.Fragment>
-        ))}
-      </List>
-      <Typography variant="h5" gutterBottom sx={{ mt: 3 }}>
-        Reviews
-      </Typography>
-      <List>
-        {reviews.map((review) => (
-          <React.Fragment key={review._id}>
-            <ListItem>
-              <ListItemText
-                primary={`${review.user?.email} says:`}
-                secondary={review.comment}
-              />
-            </ListItem>
-            <Divider />
-          </React.Fragment>
-        ))}
-      </List>
+          </Box>
+        )}
+        {car.gallery && car.gallery.length > 0 && (
+          <Box sx={{ mt: 2, mb: 4 }}>
+            <Typography variant="h6">Gallery</Typography>
+            <GalleryCarousel images={car.gallery} />
+          </Box>
+        )}
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+            gap: 2,
+            mb: 4,
+          }}
+        >
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="subtitle1">Specifications</Typography>
+            <Typography>Year: {car.year}</Typography>
+            <Typography>Seats: {car.seats}</Typography>
+            <Typography>Doors: {car.doors}</Typography>
+            <Typography>Transmission: {car.transmission}</Typography>
+          </Paper>
+
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="subtitle1">Pricing</Typography>
+            <Typography>Daily Rate: ${car.pricePerDay}</Typography>
+            <Typography>Location: {car.location}</Typography>
+          </Paper>
+        </Box>
+
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => setShowRentalDialog(true)}
+          disabled={!user || loading}
+        >
+          {loading ? "Loading..." : user ? "Rent This Car" : "Login to Rent"}
+        </Button>
+        <Button
+          variant="outlined"
+          sx={{ ml: 2 }}
+          component={Link}
+          to="/user/cars"
+        >
+          Back to Cars
+        </Button>
+      </Paper>
+
+      <Dialog
+        open={showRentalDialog}
+        onClose={() => setShowRentalDialog(false)}
+      >
+        <DialogTitle>
+          Confirm Rental for {car.brand} {car.model}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Start Date"
+            type="date"
+            value={rentalDates.start.toISOString().split("T")[0]}
+            onChange={(e) =>
+              setRentalDates({
+                ...rentalDates,
+                start: new Date(e.target.value),
+              })
+            }
+            fullWidth
+            sx={{ mt: 2 }}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            label="End Date"
+            type="date"
+            value={rentalDates.end.toISOString().split("T")[0]}
+            onChange={(e) =>
+              setRentalDates({ ...rentalDates, end: new Date(e.target.value) })
+            }
+            fullWidth
+            sx={{ mt: 2 }}
+            InputLabelProps={{ shrink: true }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowRentalDialog(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleRent}>
+            Confirm Rental
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

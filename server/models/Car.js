@@ -1,4 +1,3 @@
-// File: server/models/Car.js
 import mongoose from "mongoose";
 
 const CarSchema = new mongoose.Schema(
@@ -16,8 +15,7 @@ const CarSchema = new mongoose.Schema(
     transmission: { type: String, default: "Manual" },
     location: { type: String, default: "Main Branch" },
     image: { type: String }, // Main image URL
-    // New field: an array of additional image URLs (gallery)
-    gallery: { type: [String], default: [] },
+    gallery: { type: [String], default: [] }, // Array of additional image URLs
     isAvailable: { type: Boolean, default: true },
     status: {
       type: String,

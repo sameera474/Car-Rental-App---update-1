@@ -36,7 +36,7 @@ const ManageCars = () => {
     location: "all",
   });
 
-  // Fetch cars on mount
+  // Fetch all cars on mount
   useEffect(() => {
     const fetchCars = async () => {
       try {
@@ -56,23 +56,25 @@ const ManageCars = () => {
       setLoading(true);
       const formData = new FormData();
 
-      // For new cars, at least one image is required.
-      if (
-        !currentCar?._id &&
-        (!carData.images || carData.images.length === 0)
-      ) {
-        throw new Error("At least one image is required for new cars");
+      // For new cars, main image is required.
+      if (!currentCar?._id && !carData.image) {
+        throw new Error("Main image is required for new cars");
       }
 
-      // Append all fields into formData.
       Object.entries(carData).forEach(([key, value]) => {
-        if (key === "images") {
-          if (value instanceof Array && value.length > 0) {
-            value.forEach((file) => {
-              formData.append("images", file);
-            });
+        if (key === "image") {
+          if (value instanceof File) {
+            formData.append("image", value);
           } else if (typeof value === "string" && value) {
             formData.append("imageUrl", value);
+          }
+        } else if (key === "gallery") {
+          if (value instanceof FileList) {
+            Array.from(value).forEach((file) => {
+              formData.append("gallery", file);
+            });
+          } else if (Array.isArray(value)) {
+            value.forEach((url) => formData.append("gallery", url));
           }
         } else {
           formData.append(key, value);
@@ -120,7 +122,7 @@ const ManageCars = () => {
     setCurrentCar(null);
   };
 
-  // Filter cars
+  // Filter cars based on provided criteria
   const filteredCars = cars.filter((car) => {
     const statusMatch =
       filters.status === "all" ||
@@ -157,8 +159,49 @@ const ManageCars = () => {
 
       {/* Filter Section */}
       <Box sx={{ mb: 4, display: "flex", gap: 2, flexWrap: "wrap" }}>
-        {/* Filter controls here */}
-        {/* ... existing filter controls */}
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>Status</InputLabel>
+          <Select
+            value={filters.status}
+            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            label="Status"
+          >
+            <MenuItem value="all">All</MenuItem>
+            <MenuItem value="active">Active</MenuItem>
+            <MenuItem value="rented">Rented</MenuItem>
+            <MenuItem value="returned">Returned</MenuItem>
+            <MenuItem value="removed">Removed</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>Transmission</InputLabel>
+          <Select
+            value={filters.transmission}
+            onChange={(e) =>
+              setFilters({ ...filters, transmission: e.target.value })
+            }
+            label="Transmission"
+          >
+            <MenuItem value="all">All</MenuItem>
+            <MenuItem value="Manual">Manual</MenuItem>
+            <MenuItem value="Automatic">Automatic</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>Location</InputLabel>
+          <Select
+            value={filters.location}
+            onChange={(e) =>
+              setFilters({ ...filters, location: e.target.value })
+            }
+            label="Location"
+          >
+            <MenuItem value="all">All</MenuItem>
+            <MenuItem value="Main Branch">Main Branch</MenuItem>
+            <MenuItem value="Downtown">Downtown</MenuItem>
+            <MenuItem value="Airport">Airport</MenuItem>
+          </Select>
+        </FormControl>
       </Box>
 
       <Typography variant="h5" gutterBottom>
@@ -170,7 +213,7 @@ const ManageCars = () => {
           <Grid item xs={12} sm={6} md={4} key={car._id}>
             <Card>
               <CardContent>
-                {car.images && car.images.length > 0 && (
+                {car.image && (
                   <Box
                     sx={{
                       height: 200,
@@ -180,7 +223,7 @@ const ManageCars = () => {
                     }}
                   >
                     <img
-                      src={car.images[0]} // Show the first image for preview
+                      src={car.image}
                       alt={`${car.brand} ${car.model}`}
                       style={{
                         width: "100%",
@@ -215,7 +258,6 @@ const ManageCars = () => {
                   label={`Category: ${car.category || "Economy"}`}
                   sx={{ mt: 1 }}
                 />
-
                 <Box sx={{ mt: 1, display: "flex", gap: 1, flexWrap: "wrap" }}>
                   <Chip label={`Year: ${car.year}`} />
                   <Chip label={`Mileage: ${car.mileage || "N/A"} km`} />
@@ -259,7 +301,6 @@ const ManageCars = () => {
 };
 
 const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
-  // Now handle multiple files
   const [formData, setFormData] = useState({
     brand: "",
     model: "",
@@ -271,20 +312,19 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
     transmission: "Manual",
     location: "Main Branch",
     category: "Economy",
-    images: [], // Array to store File objects for images
+    image: null,
+    gallery: null, // FileList for gallery images
   });
-  const [previews, setPreviews] = useState([]);
+  const [preview, setPreview] = useState(null);
 
-  // Clean up blob URLs on unmount or when previews change
+  // Revoke previous Blob URL when component unmounts or when preview changes
   useEffect(() => {
     return () => {
-      previews.forEach((url) => {
-        if (url.startsWith("blob:")) {
-          URL.revokeObjectURL(url);
-        }
-      });
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
     };
-  }, [previews]);
+  }, [preview]);
 
   useEffect(() => {
     if (currentCar) {
@@ -299,9 +339,10 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
         transmission: currentCar.transmission,
         location: currentCar.location,
         category: currentCar.category || "Economy",
-        images: [], // start with empty; you may choose to show existing images separately
+        image: currentCar.image, // Main image URL
+        gallery: currentCar.gallery || [],
       });
-      setPreviews(currentCar.images || []);
+      setPreview(currentCar.image);
     } else {
       setFormData({
         brand: "",
@@ -314,31 +355,34 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
         transmission: "Manual",
         location: "Main Branch",
         category: "Economy",
-        images: [],
+        image: null,
+        gallery: null,
       });
-      setPreviews([]);
+      setPreview(null);
     }
   }, [currentCar]);
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 0) {
-      // Revoke existing blob URLs if any
-      previews.forEach((url) => {
-        if (url.startsWith("blob:")) {
-          URL.revokeObjectURL(url);
-        }
-      });
-      setFormData((prev) => ({ ...prev, images: files }));
-      const newPreviews = files.map((file) => URL.createObjectURL(file));
-      setPreviews(newPreviews);
+    const file = e.target.files[0];
+    if (file) {
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+      setFormData((prev) => ({ ...prev, image: file }));
+      const url = URL.createObjectURL(file);
+      setPreview(url);
     }
+  };
+
+  // Handler for multiple gallery files
+  const handleGalleryChange = (e) => {
+    setFormData((prev) => ({ ...prev, gallery: e.target.files }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!currentCar && formData.images.length === 0) {
-      alert("Please upload at least one image for the car");
+    if (!currentCar && !formData.image) {
+      alert("Please upload a main image for the car");
       return;
     }
     onSubmit(formData);
@@ -464,7 +508,7 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
               </Select>
             </FormControl>
           </Grid>
-          {/* New Category input */}
+          {/* Category Input */}
           <Grid item xs={6} md={4}>
             <FormControl fullWidth>
               <InputLabel>Category</InputLabel>
@@ -483,59 +527,53 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
               </Select>
             </FormControl>
           </Grid>
+          {/* Main Image Upload */}
           <Grid item xs={12}>
             <input
               accept="image/*"
               type="file"
-              multiple
               onChange={handleFileChange}
               style={{ display: "none" }}
-              id="car-images-upload"
+              id="car-image-upload"
               required={!currentCar}
             />
-            <label htmlFor="car-images-upload">
+            <label htmlFor="car-image-upload">
               <Button
                 variant="outlined"
                 component="span"
                 startIcon={<CloudUpload />}
                 sx={{ mr: 2 }}
               >
-                Upload Images
+                Upload Main Image
               </Button>
             </label>
-            {previews && previews.length > 0 && (
+            {preview && (
               <Box
-                sx={{
-                  mt: 2,
-                  display: "flex",
-                  gap: 1,
-                  overflowX: "auto",
-                  maxWidth: "100%",
-                }}
+                sx={{ mt: 2, height: 200, borderRadius: 2, overflow: "hidden" }}
               >
-                {previews.map((url, idx) => (
-                  <Box
-                    key={idx}
-                    sx={{
-                      minWidth: 100,
-                      height: 100,
-                      borderRadius: 1,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <img
-                      src={url}
-                      alt={`Preview ${idx + 1}`}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  </Box>
-                ))}
+                <img
+                  src={preview}
+                  alt="Preview"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
               </Box>
             )}
+          </Grid>
+          {/* Gallery Upload for multiple images */}
+          <Grid item xs={12}>
+            <input
+              accept="image/*"
+              type="file"
+              multiple
+              onChange={handleGalleryChange}
+              style={{ display: "none" }}
+              id="car-gallery-upload"
+            />
+            <label htmlFor="car-gallery-upload">
+              <Button variant="outlined" component="span" sx={{ mr: 2 }}>
+                Upload Gallery Images
+              </Button>
+            </label>
           </Grid>
         </Grid>
       </DialogContent>
