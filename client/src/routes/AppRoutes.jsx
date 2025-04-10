@@ -5,6 +5,7 @@ import Home from "../pages/public/Home";
 import About from "../pages/public/About";
 import Login from "../pages/public/Login";
 import Register from "../pages/public/Register";
+import Contact from "../pages/public/Contact";
 
 // User Pages
 import UserDashboard from "../pages/user/Dashboard";
@@ -48,6 +49,7 @@ const AppRoutes = () => {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/register" element={<Register />} />
         <Route path="/cars/:id" element={<CarDetails />} />
         <Route path="/cars" element={<CarList />} />
