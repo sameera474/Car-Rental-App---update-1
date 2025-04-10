@@ -1,0 +1,13 @@
+/* sliderOverrides.css */
+.slick-list {
+  overflow: hidden;
+}
+
+.slick-track {
+  display: flex !important;
+  flex-direction: row !important;
+}
+
+.slick-slide {
+  display: block;
+}

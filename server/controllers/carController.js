@@ -1,11 +1,48 @@
-// server/controllers/carController.js
 import Car from "../models/Car.js";
-import Rental from "../models/Rental.js";
+import multer from "multer";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
 
-// Add Car – now handling a main image and an optional gallery
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadDir = path.join(__dirname, "../uploads");
+
+// Ensure uploads folder exists
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, `${uniqueSuffix}-${file.originalname}`);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith("image/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image files are allowed!"), false);
+  }
+};
+
+// Export a named middleware for uploading both main image and gallery images:
+export const uploadCarFiles = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+}).fields([
+  { name: "image", maxCount: 1 },
+  { name: "gallery", maxCount: 10 },
+]);
+
 export const addCar = async (req, res) => {
   try {
-    const { body, files } = req;
+    const { body } = req;
     const protocol = req.protocol;
     const host = req.get("host");
 
@@ -16,27 +53,11 @@ export const addCar = async (req, res) => {
         .status(400)
         .json({ message: `Missing fields: ${missingFields.join(", ")}` });
     }
-    // Check for a main image: either uploaded as "image" or provided via imageUrl in the body
-    if ((!files || !files.image) && !body.imageUrl) {
+    if (!req.files.image && !body.imageUrl) {
       return res.status(400).json({ message: "Main image is required" });
     }
 
-    // Process main image
-    let mainImage = "";
-    if (files && files.image && files.image.length > 0) {
-      mainImage = `${protocol}://${host}/uploads/${files.image[0].filename}`;
-    } else {
-      mainImage = body.imageUrl || "";
-    }
-
-    // Process gallery images if provided
-    let gallery = [];
-    if (files && files.gallery) {
-      gallery = files.gallery.map(
-        (file) => `${protocol}://${host}/uploads/${file.filename}`
-      );
-    }
-
+    // Construct car data from text fields and files
     const carData = {
       brand: body.brand,
       model: body.model,
@@ -47,13 +68,22 @@ export const addCar = async (req, res) => {
       doors: Number(body.doors || 5),
       transmission: body.transmission || "Manual",
       location: body.location || "Main Branch",
-      image: mainImage,
-      gallery: gallery,
+      image: req.files.image
+        ? `${protocol}://${host}/uploads/${req.files.image[0].filename}`
+        : body.imageUrl || "",
       isAvailable: body.isAvailable !== "false",
       status: "active",
       category: body.category || "Economy",
-      featured: body.featured === "true",
+      featured: body.featured === "true", // Convert string "true" to boolean true
     };
+
+    // Process gallery files if provided
+    if (req.files.gallery) {
+      const galleryUrls = req.files.gallery.map(
+        (file) => `${protocol}://${host}/uploads/${file.filename}`
+      );
+      carData.gallery = galleryUrls;
+    }
 
     const newCar = await Car.create(carData);
     res.status(201).json(newCar);
@@ -63,29 +93,11 @@ export const addCar = async (req, res) => {
   }
 };
 
-// Update Car – handling new main image & gallery files
 export const updateCar = async (req, res) => {
   try {
-    const { body, files } = req;
+    const { body } = req;
     const protocol = req.protocol;
     const host = req.get("host");
-
-    let mainImage = "";
-    if (files && files.image && files.image.length > 0) {
-      mainImage = `${protocol}://${host}/uploads/${files.image[0].filename}`;
-    } else {
-      mainImage = req.body.imageUrl || "";
-    }
-
-    let gallery = [];
-    if (files && files.gallery) {
-      gallery = files.gallery.map(
-        (file) => `${protocol}://${host}/uploads/${file.filename}`
-      );
-    } else if (body.galleryUrls) {
-      // In case gallery URLs are sent as a comma-separated string
-      gallery = body.galleryUrls.split(",").map((url) => url.trim());
-    }
 
     const updates = {
       brand: body.brand,
@@ -97,13 +109,27 @@ export const updateCar = async (req, res) => {
       doors: Number(body.doors || 5),
       transmission: body.transmission || "Manual",
       location: body.location || "Main Branch",
-      image: mainImage,
-      gallery: gallery,
+      // Update main image if a new file is provided
+      image: req.files.image
+        ? `${protocol}://${host}/uploads/${req.files.image[0].filename}`
+        : body.imageUrl || "",
       isAvailable: true,
       status: "active",
       category: body.category || "Economy",
       featured: body.featured === "true",
     };
+
+    // Process gallery files update if provided, appending to existing gallery array
+    if (req.files.gallery) {
+      const galleryUrls = req.files.gallery.map(
+        (file) => `${protocol}://${host}/uploads/${file.filename}`
+      );
+      // If you want to replace the gallery entirely, use:
+      updates.gallery = galleryUrls;
+      // Or, if appending, retrieve existing car and concatenate:
+      // const existingCar = await Car.findById(req.params.id);
+      // updates.gallery = (existingCar.gallery || []).concat(galleryUrls);
+    }
 
     const updatedCar = await Car.findByIdAndUpdate(req.params.id, updates, {
       new: true,
@@ -118,7 +144,7 @@ export const updateCar = async (req, res) => {
   }
 };
 
-// Get All Cars, Get Available Cars, Get Car by ID, Remove Car, Get Featured Cars, Get Popular Cars, and Get Car Categories remain unchanged
+// The remaining functions remain the same
 export const getAllCars = async (req, res) => {
   try {
     const cars = await Car.find().sort({ createdAt: -1 });
@@ -137,10 +163,9 @@ export const getAvailableCars = async (req, res) => {
     });
     res.json(cars);
   } catch (error) {
-    res.status(500).json({
-      message: "Error fetching available cars",
-      error: error.message,
-    });
+    res
+      .status(500)
+      .json({ message: "Error fetching available cars", error: error.message });
   }
 };
 

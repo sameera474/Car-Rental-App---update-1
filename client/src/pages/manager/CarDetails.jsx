@@ -1,5 +1,5 @@
 // File: client/src/pages/user/CarDetails.jsx
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Box,
@@ -12,11 +12,13 @@ import {
   DialogContent,
   DialogTitle,
   TextField,
+  IconButton,
+  Alert,
 } from "@mui/material";
+import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import { fetchCarById } from "../../services/carService";
 import { createRental } from "../../services/rentalService";
 import { useAuth } from "../../context/AuthContext";
-import GalleryCarousel from "../../components/GalleryCarousel";
 
 const CarDetails = () => {
   const { id } = useParams();
@@ -30,6 +32,7 @@ const CarDetails = () => {
     start: new Date(),
     end: new Date(Date.now() + 86400000),
   });
+  const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
 
   useEffect(() => {
     const getCar = async () => {
@@ -51,6 +54,11 @@ const CarDetails = () => {
         navigate("/login");
         return;
       }
+      // Only allow role "user" to rent a car.
+      if (user.role !== "user") {
+        alert("Only users are allowed to rent a car.");
+        return;
+      }
       await createRental({
         carId: car._id,
         startDate: rentalDates.start.toISOString(),
@@ -64,6 +72,22 @@ const CarDetails = () => {
     }
   };
 
+  const handlePrevImage = () => {
+    if (car.gallery && car.gallery.length > 0) {
+      setCurrentGalleryIndex((prev) =>
+        prev === 0 ? car.gallery.length - 1 : prev - 1
+      );
+    }
+  };
+
+  const handleNextImage = () => {
+    if (car.gallery && car.gallery.length > 0) {
+      setCurrentGalleryIndex((prev) =>
+        prev === car.gallery.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
   if (loading || authLoading) {
     return (
       <Box sx={{ p: 3, display: "flex", justifyContent: "center" }}>
@@ -74,7 +98,7 @@ const CarDetails = () => {
   if (error) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography color="error">{error}</Typography>
+        <Alert severity="error">{error}</Alert>
       </Box>
     );
   }
@@ -85,6 +109,7 @@ const CarDetails = () => {
         <Typography variant="h4" gutterBottom>
           {car.brand} {car.model}
         </Typography>
+        {/* Main image */}
         {car.image && (
           <Box
             sx={{
@@ -98,26 +123,59 @@ const CarDetails = () => {
           >
             <img
               src={car.image}
-              alt={`${car.brand} ${car.model}`}
+              alt={`${car.brand} ${car.model} main`}
               style={{
-                maxWidth: "100%",
+                width: "100%",
                 height: "300px",
                 objectFit: "cover",
               }}
             />
           </Box>
         )}
+        {/* Gallery Carousel */}
         {car.gallery && car.gallery.length > 0 && (
-          <Box sx={{ mt: 2, mb: 4 }}>
-            <Typography variant="h6">Gallery</Typography>
-            <GalleryCarousel images={car.gallery} />
+          <Box sx={{ position: "relative", textAlign: "center", mb: 2 }}>
+            <IconButton
+              onClick={handlePrevImage}
+              sx={{
+                position: "absolute",
+                left: 0,
+                top: "50%",
+                transform: "translateY(-50%)",
+                zIndex: 1,
+              }}
+            >
+              <ArrowBackIos />
+            </IconButton>
+            <Box
+              component="img"
+              src={car.gallery[currentGalleryIndex]}
+              alt={`${car.brand} ${car.model} gallery`}
+              sx={{
+                width: "100%",
+                height: 300,
+                objectFit: "cover",
+                borderRadius: "8px",
+              }}
+            />
+            <IconButton
+              onClick={handleNextImage}
+              sx={{
+                position: "absolute",
+                right: 0,
+                top: "50%",
+                transform: "translateY(-50%)",
+                zIndex: 1,
+              }}
+            >
+              <ArrowForwardIos />
+            </IconButton>
           </Box>
         )}
-
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
             gap: 2,
             mb: 4,
           }}
@@ -128,12 +186,13 @@ const CarDetails = () => {
             <Typography>Seats: {car.seats}</Typography>
             <Typography>Doors: {car.doors}</Typography>
             <Typography>Transmission: {car.transmission}</Typography>
+            <Typography>Category: {car.category}</Typography>
           </Paper>
-
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle1">Pricing</Typography>
             <Typography>Daily Rate: ${car.pricePerDay}</Typography>
             <Typography>Location: {car.location}</Typography>
+            <Typography>Status: {car.status}</Typography>
           </Paper>
         </Box>
 
@@ -141,9 +200,13 @@ const CarDetails = () => {
           variant="contained"
           color="primary"
           onClick={() => setShowRentalDialog(true)}
-          disabled={!user || loading}
+          disabled={!user || loading || (user && user.role !== "user")}
         >
-          {loading ? "Loading..." : user ? "Rent This Car" : "Login to Rent"}
+          {loading
+            ? "Loading..."
+            : user && user.role === "user"
+            ? "Rent This Car"
+            : "Viewing Only (Not for Rental)"}
         </Button>
         <Button
           variant="outlined"
@@ -182,7 +245,10 @@ const CarDetails = () => {
             type="date"
             value={rentalDates.end.toISOString().split("T")[0]}
             onChange={(e) =>
-              setRentalDates({ ...rentalDates, end: new Date(e.target.value) })
+              setRentalDates({
+                ...rentalDates,
+                end: new Date(e.target.value),
+              })
             }
             fullWidth
             sx={{ mt: 2 }}

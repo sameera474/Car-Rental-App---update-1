@@ -54,6 +54,11 @@ const CarDetails = () => {
         navigate("/login");
         return;
       }
+      // Only allow rental if user role is "user"
+      if (user && user.role !== "user") {
+        setError("Only customer accounts can rent a car.");
+        return;
+      }
       await createRental({
         carId: car._id,
         startDate: rentalDates.start.toISOString(),
@@ -236,10 +241,7 @@ const CarDetails = () => {
             type="date"
             value={rentalDates.end.toISOString().split("T")[0]}
             onChange={(e) =>
-              setRentalDates({
-                ...rentalDates,
-                end: new Date(e.target.value),
-              })
+              setRentalDates({ ...rentalDates, end: new Date(e.target.value) })
             }
             fullWidth
             sx={{ mt: 2 }}

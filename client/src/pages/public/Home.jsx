@@ -1,28 +1,89 @@
-import React, { useState, useEffect } from "react";
-import { Container, Box, Typography, Paper, Button, Grid } from "@mui/material";
+// File: client/src/pages/public/Home.jsx
+import React, { useEffect, useState } from "react";
+import {
+  Container,
+  Box,
+  Typography,
+  Paper,
+  Button,
+  Grid,
+  Avatar,
+  Rating,
+} from "@mui/material";
 import { Link } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 import axiosInstance from "../../services/axiosInstance";
+
+// Import react-slick and its CSS
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+
+// Import custom slider CSS override
+import "../../styles/sliderOverrides.css";
+
+// Placeholder image
+const DEFAULT_CAR_IMAGE = "https://via.placeholder.com/300x150?text=No+Image";
 
 const Home = () => {
   const [featuredVehicles, setFeaturedVehicles] = useState([]);
   const [popularVehicles, setPopularVehicles] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
   const [error, setError] = useState("");
 
+  // Common slider settings for both Featured and Popular vehicles
+  const vehicleSliderSettings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 3, // Show 3 slides in desktop mode
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 3000,
+    responsive: [
+      { breakpoint: 960, settings: { slidesToShow: 2 } },
+      { breakpoint: 600, settings: { slidesToShow: 1 } },
+    ],
+  };
+
+  // Slider settings for testimonials
+  const testimonialSliderSettings = {
+    dots: true,
+    infinite: true,
+    speed: 600,
+    slidesToShow: 2,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 4000,
+    responsive: [{ breakpoint: 960, settings: { slidesToShow: 1 } }],
+  };
+
+  // Fetch data from backend endpoints
   const fetchHomeData = async () => {
     try {
-      const [featuredRes, popularRes, categoriesRes] = await Promise.all([
-        axiosInstance.get("/cars/featured"),
-        axiosInstance.get("/cars/popular"),
-        axiosInstance.get("/cars/categories"),
-      ]);
-      setFeaturedVehicles(featuredRes.data);
+      const [featuredRes, popularRes, categoriesRes, reviewsRes] =
+        await Promise.all([
+          axiosInstance.get("/cars/featured"),
+          axiosInstance.get("/cars/popular"),
+          axiosInstance.get("/cars/categories"),
+          axiosInstance.get("/reviews/recent"),
+        ]);
+
+      // Remove vehicles from featured if they are also in popular (optional)
+      const popularIDs = new Set(popularRes.data.map((car) => car._id));
+      const filteredFeatured = featuredRes.data.filter(
+        (car) => !popularIDs.has(car._id)
+      );
+      setFeaturedVehicles(
+        filteredFeatured.length > 0 ? filteredFeatured : featuredRes.data
+      );
       setPopularVehicles(popularRes.data);
       setCategories(categoriesRes.data);
+      setTestimonials(reviewsRes.data);
     } catch (err) {
       console.error("Error fetching home page data:", err);
-      setError("Failed to load home page data");
+      setError("Failed to load home page data: " + err.message);
     }
   };
 
@@ -75,30 +136,39 @@ const Home = () => {
           <Typography variant="h4" gutterBottom>
             Featured Vehicles
           </Typography>
-          <Grid container spacing={3}>
-            {featuredVehicles.map((car) => (
-              <Grid item xs={12} sm={6} md={4} key={car._id}>
-                <Paper sx={{ p: 2, textAlign: "center" }}>
-                  <img
-                    src={car.image}
-                    alt={`${car.brand} ${car.model}`}
-                    style={{
-                      width: "100%",
-                      height: "150px",
-                      objectFit: "cover",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Typography variant="h6" sx={{ mt: 2 }}>
-                    {car.brand} {car.model}
-                  </Typography>
-                  <Typography variant="body2">
-                    ${car.pricePerDay} per day
-                  </Typography>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
+          {featuredVehicles.length > 0 ? (
+            <Slider {...vehicleSliderSettings}>
+              {featuredVehicles.map((car, index) => (
+                <Box key={car._id || index} sx={{ padding: 1 }}>
+                  <Paper sx={{ p: 2, textAlign: "center" }}>
+                    <img
+                      src={car.image || DEFAULT_CAR_IMAGE}
+                      alt={`${car.brand} ${car.model}`}
+                      style={{
+                        width: "100%",
+                        height: "150px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                      }}
+                    />
+                    <Typography variant="h6" sx={{ mt: 2 }}>
+                      {car.brand} {car.model}
+                    </Typography>
+                    <Typography variant="body2">
+                      ${car.pricePerDay} per day
+                    </Typography>
+                  </Paper>
+                </Box>
+              ))}
+            </Slider>
+          ) : (
+            <Typography>No featured vehicles available</Typography>
+          )}
+          <Box textAlign="center" sx={{ mt: 2 }}>
+            <Button variant="text" component={Link} to="/cars/featured">
+              See All Featured Vehicles
+            </Button>
+          </Box>
         </Box>
 
         {/* Popular Vehicles Section */}
@@ -106,30 +176,39 @@ const Home = () => {
           <Typography variant="h4" gutterBottom>
             Popular Vehicles
           </Typography>
-          <Grid container spacing={3}>
-            {popularVehicles.map((car) => (
-              <Grid item xs={12} sm={6} md={4} key={car._id}>
-                <Paper sx={{ p: 2, textAlign: "center" }}>
-                  <img
-                    src={car.image}
-                    alt={`${car.brand} ${car.model}`}
-                    style={{
-                      width: "100%",
-                      height: "150px",
-                      objectFit: "cover",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Typography variant="h6" sx={{ mt: 2 }}>
-                    {car.brand} {car.model}
-                  </Typography>
-                  <Typography variant="body2">
-                    ${car.pricePerDay} per day
-                  </Typography>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
+          {popularVehicles.length > 0 ? (
+            <Slider {...vehicleSliderSettings}>
+              {popularVehicles.map((car, index) => (
+                <Box key={car._id || index} sx={{ padding: 1 }}>
+                  <Paper sx={{ p: 2, textAlign: "center" }}>
+                    <img
+                      src={car.image || DEFAULT_CAR_IMAGE}
+                      alt={`${car.brand} ${car.model}`}
+                      style={{
+                        width: "100%",
+                        height: "150px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                      }}
+                    />
+                    <Typography variant="h6" sx={{ mt: 2 }}>
+                      {car.brand} {car.model}
+                    </Typography>
+                    <Typography variant="body2">
+                      ${car.pricePerDay} per day
+                    </Typography>
+                  </Paper>
+                </Box>
+              ))}
+            </Slider>
+          ) : (
+            <Typography>No popular vehicles available</Typography>
+          )}
+          <Box textAlign="center" sx={{ mt: 2 }}>
+            <Button variant="text" component={Link} to="/cars/popular">
+              See All Popular Vehicles
+            </Button>
+          </Box>
         </Box>
 
         {/* Categories Section */}
@@ -145,16 +224,71 @@ const Home = () => {
               flexWrap: "wrap",
             }}
           >
-            {categories.map((cat) => (
+            {categories.map((cat, index) => (
               <Button
-                key={cat}
+                key={index}
                 variant="outlined"
                 color="primary"
                 sx={{ textTransform: "none" }}
+                component={Link}
+                to={`/cars/category/${cat.toLowerCase()}`}
               >
                 {cat}
               </Button>
             ))}
+          </Box>
+        </Box>
+
+        {/* Testimonials Section */}
+        <Box sx={{ my: 4 }}>
+          <Typography variant="h4" gutterBottom>
+            What Our Customers Say
+          </Typography>
+          <Slider {...testimonialSliderSettings}>
+            {testimonials.map((testimonial, index) => (
+              <Box key={testimonial.id || index} sx={{ padding: 2 }}>
+                <Paper
+                  sx={{
+                    p: 3,
+                    textAlign: "center",
+                    height: 250,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Avatar
+                    src={
+                      testimonial.avatar ||
+                      "https://via.placeholder.com/60?text=Avatar"
+                    }
+                    sx={{ width: 60, height: 60, mb: 2 }}
+                  />
+                  <Rating
+                    value={testimonial.rating}
+                    precision={0.5}
+                    readOnly
+                    sx={{ mb: 1 }}
+                  />
+                  <Typography
+                    variant="body1"
+                    gutterBottom
+                    sx={{ minHeight: 60 }}
+                  >
+                    {testimonial.comment}
+                  </Typography>
+                  <Typography variant="subtitle2">
+                    — {testimonial.name}
+                  </Typography>
+                </Paper>
+              </Box>
+            ))}
+          </Slider>
+          <Box textAlign="center" sx={{ mt: 2 }}>
+            <Button variant="text" component={Link} to="/reviews">
+              See All Reviews
+            </Button>
           </Box>
         </Box>
 

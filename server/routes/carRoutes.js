@@ -1,4 +1,4 @@
-// server/routes/carRoutes.js
+// File: server/routes/carRoutes.js
 import express from "express";
 import {
   addCar,
@@ -12,7 +12,7 @@ import {
   getCarCategories,
 } from "../controllers/carController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
-import { uploadCarImages } from "../middleware/uploadMiddleware.js"; // Updated named import
+import { uploadCarFiles } from "../middleware/uploadMiddleware.js"; // Named import
 
 const router = express.Router();
 
@@ -24,19 +24,19 @@ router.get("/popular", getPopularCars);
 router.get("/categories", getCarCategories);
 router.get("/:id", getCarById);
 
-// Protected routes (only for managers and admins)
+// Protected routes (only managers and admins can add, update, or remove cars)
 router.post(
   "/",
   protect,
   authorize("manager", "admin"),
-  uploadCarImages,
+  uploadCarFiles,
   addCar
 );
 router.put(
   "/:id",
   protect,
   authorize("manager", "admin"),
-  uploadCarImages,
+  uploadCarFiles,
   updateCar
 );
 router.put("/:id/remove", protect, authorize("manager", "admin"), removeCar);

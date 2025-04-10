@@ -22,6 +22,7 @@ import {
 } from "@mui/material";
 import { Delete, Edit, CloudUpload } from "@mui/icons-material";
 import axiosInstance from "../../services/axiosInstance";
+import { useAuth } from "../../context/AuthContext";
 
 const ManageCars = () => {
   const [cars, setCars] = useState([]);
@@ -55,12 +56,10 @@ const ManageCars = () => {
     try {
       setLoading(true);
       const formData = new FormData();
-
-      // For new cars, main image is required.
+      // Main image is required when adding a new car.
       if (!currentCar?._id && !carData.image) {
         throw new Error("Main image is required for new cars");
       }
-
       Object.entries(carData).forEach(([key, value]) => {
         if (key === "image") {
           if (value instanceof File) {
@@ -122,7 +121,6 @@ const ManageCars = () => {
     setCurrentCar(null);
   };
 
-  // Filter cars based on provided criteria
   const filteredCars = cars.filter((car) => {
     const statusMatch =
       filters.status === "all" ||
@@ -313,11 +311,10 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
     location: "Main Branch",
     category: "Economy",
     image: null,
-    gallery: null, // FileList for gallery images
+    gallery: null,
   });
   const [preview, setPreview] = useState(null);
 
-  // Revoke previous Blob URL when component unmounts or when preview changes
   useEffect(() => {
     return () => {
       if (preview && preview.startsWith("blob:")) {
@@ -339,7 +336,7 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
         transmission: currentCar.transmission,
         location: currentCar.location,
         category: currentCar.category || "Economy",
-        image: currentCar.image, // Main image URL
+        image: currentCar.image,
         gallery: currentCar.gallery || [],
       });
       setPreview(currentCar.image);
@@ -374,7 +371,6 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
     }
   };
 
-  // Handler for multiple gallery files
   const handleGalleryChange = (e) => {
     setFormData((prev) => ({ ...prev, gallery: e.target.files }));
   };
@@ -508,7 +504,6 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
               </Select>
             </FormControl>
           </Grid>
-          {/* Category Input */}
           <Grid item xs={6} md={4}>
             <FormControl fullWidth>
               <InputLabel>Category</InputLabel>
@@ -574,6 +569,7 @@ const CarDialog = ({ open, onClose, onSubmit, currentCar, loading }) => {
                 Upload Gallery Images
               </Button>
             </label>
+            {/* Optional: You can add a preview for each gallery image if desired */}
           </Grid>
         </Grid>
       </DialogContent>

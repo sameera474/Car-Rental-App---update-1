@@ -1,3 +1,4 @@
+// File: client/src/pages/user/CarList.jsx
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -6,11 +7,14 @@ import {
   CardContent,
   Button,
   Grid,
+  CircularProgress,
+  Alert,
+  Chip,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import axiosInstance from "../../services/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
-import RentalDialog from "./RentalDialog";
+import RentalDialog from "./RentalDialog"; // Your reusable rental dialog
 
 const CarList = () => {
   const [cars, setCars] = useState([]);
@@ -31,8 +35,13 @@ const CarList = () => {
   }, []);
 
   const handleRent = async (carId, dates) => {
+    // Only role "user" is allowed to rent
     if (!user) {
       navigate("/login");
+      return;
+    }
+    if (user.role !== "user") {
+      alert("Only users are allowed to rent a car.");
       return;
     }
     try {
@@ -41,7 +50,7 @@ const CarList = () => {
         startDate: dates.start.toISOString(),
         endDate: dates.end.toISOString(),
       });
-      // Refresh available cars
+      // Refresh available cars after rental
       const { data } = await axiosInstance.get("/cars/available");
       setCars(data);
       alert("Car rented successfully!");
@@ -80,16 +89,40 @@ const CarList = () => {
                     />
                   </Box>
                 )}
-                <Typography variant="h6">
-                  {car.brand} {car.model}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography variant="h6">
+                    {car.brand} {car.model}
+                  </Typography>
+                  <Chip
+                    label={car.isAvailable ? "Available" : "Rented"}
+                    color={car.isAvailable ? "success" : "error"}
+                  />
+                </Box>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  ${car.pricePerDay}/day
                 </Typography>
-                <Typography>Price per day: ${car.pricePerDay}</Typography>
                 <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
                   <Button
                     variant="contained"
-                    onClick={() => setSelectedCar(car)}
+                    onClick={() => {
+                      // Only allow "Rent Now" if role === "user"
+                      if (user && user.role === "user") {
+                        setSelectedCar(car);
+                      } else if (!user) {
+                        navigate("/login");
+                      } else {
+                        alert("Viewing Only. Only users can rent cars.");
+                      }
+                    }}
+                    disabled={!user || (user && user.role !== "user")}
                   >
-                    Rent Now
+                    {user && user.role === "user" ? "Rent Now" : "Viewing Only"}
                   </Button>
                   <Button
                     variant="outlined"
@@ -104,6 +137,7 @@ const CarList = () => {
           </Grid>
         ))}
       </Grid>
+
       <RentalDialog
         car={selectedCar}
         open={Boolean(selectedCar)}
