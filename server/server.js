@@ -11,9 +11,11 @@ import rentalRoutes from "./routes/rentalRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import bossRoutes from "./routes/bossRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
-
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Connect Database
 connectDB();
 
@@ -29,6 +31,7 @@ app.use("/api/rentals", rentalRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/boss", bossRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Global error handling
 app.use((err, req, res, next) => {
