@@ -42,7 +42,7 @@ import PopularCars from "../pages/public/PopularCars";
 import AllReviews from "../pages/public/AllReviews";
 
 import ProtectedRoute from "./ProtectedRoute";
-import NavBar from "../components/NavBar";
+import NavBar from "../components/Navbar";
 import ReviewForm from "../../src/components/ReviewForm";
 
 const AppRoutes = () => {
