@@ -19,7 +19,6 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
-// A valid placeholder image URL (verify that it resolves)
 const DEFAULT_CAR_IMAGE = "https://via.placeholder.com/300x150?text=No+Image";
 
 const Home = () => {
@@ -29,12 +28,11 @@ const Home = () => {
   const [testimonials, setTestimonials] = useState([]);
   const [error, setError] = useState("");
 
-  // Use identical slider settings for both Featured and Popular sections.
   const vehicleSliderSettings = {
     dots: true,
     infinite: true,
     speed: 500,
-    slidesToShow: 3, // Show 3 cards per view on desktop
+    slidesToShow: 3,
     slidesToScroll: 1,
     autoplay: true,
     autoplaySpeed: 3000,
@@ -44,7 +42,6 @@ const Home = () => {
     ],
   };
 
-  // Slider settings for testimonials
   const testimonialSliderSettings = {
     dots: true,
     infinite: true,
@@ -56,10 +53,9 @@ const Home = () => {
     responsive: [{ breakpoint: 960, settings: { slidesToShow: 1 } }],
   };
 
-  // Fetch home page data from backend endpoints.
   const fetchHomeData = async () => {
     try {
-      const [featuredRes, popularRes, categoriesRes, reviewsRes] =
+      const [featuredRes, popularRes, categoriesRes, recentReviewsRes] =
         await Promise.all([
           axiosInstance.get("/cars/featured"),
           axiosInstance.get("/cars/popular"),
@@ -67,18 +63,17 @@ const Home = () => {
           axiosInstance.get("/reviews/recent"),
         ]);
 
-      // Optionally remove vehicles from featured if they also appear in popular.
       const popularIDs = new Set(popularRes.data.map((car) => car._id));
       const filteredFeatured = featuredRes.data.filter(
         (car) => !popularIDs.has(car._id)
       );
+
       setFeaturedVehicles(
         filteredFeatured.length > 0 ? filteredFeatured : featuredRes.data
       );
-
       setPopularVehicles(popularRes.data);
       setCategories(categoriesRes.data);
-      setTestimonials(reviewsRes.data);
+      setTestimonials(recentReviewsRes.data);
     } catch (err) {
       console.error("Error fetching home page data:", err);
       setError("Failed to load home page data: " + err.message);

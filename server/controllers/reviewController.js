@@ -106,10 +106,16 @@ export const getUserReviews = async (req, res) => {
 };
 export const getRecentReviews = async (req, res) => {
   try {
-    const recentReviews = await Review.find().sort({ createdAt: -1 }).limit(5);
+    const recentReviews = await Review.find({})
+      .sort({ createdAt: -1 })
+      .limit(10)
+      // If you have a user reference in your Review, you can populate basic info (adjust fields as needed)
+      .populate("user", "name avatar");
     res.json(recentReviews);
   } catch (error) {
     console.error("Error fetching recent reviews:", error);
-    res.status(500).json({ message: "Error fetching recent reviews" });
+    res
+      .status(500)
+      .json({ message: "Error fetching recent reviews", error: error.message });
   }
 };

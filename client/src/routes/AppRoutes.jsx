@@ -3,9 +3,9 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "../pages/public/Home";
 import About from "../pages/public/About";
+import Contact from "../pages/public/Contact";
 import Login from "../pages/public/Login";
 import Register from "../pages/public/Register";
-import Contact from "../pages/public/Contact";
 
 // User Pages
 import UserDashboard from "../pages/user/Dashboard";
@@ -36,8 +36,13 @@ import ManageBosses from "../pages/admin/ManageBosses";
 import ResetSystem from "../pages/admin/ResetSystem";
 import AdminProfile from "../pages/admin/Profile";
 
+// New Public Pages
+import FeaturedCars from "../pages/public/FeaturedCars";
+import PopularCars from "../pages/public/PopularCars";
+import AllReviews from "../pages/public/AllReviews";
+
 import ProtectedRoute from "./ProtectedRoute";
-import NavBar from "../components/Navbar";
+import NavBar from "../components/NavBar";
 import ReviewForm from "../../src/components/ReviewForm";
 
 const AppRoutes = () => {
@@ -48,12 +53,16 @@ const AppRoutes = () => {
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
-        <Route path="/login" element={<Login />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/cars/:id" element={<CarDetails />} />
         <Route path="/cars" element={<CarList />} />
-        <Route path="/reviews" element={<ReviewForm />} />
+        {/* New public pages */}
+        <Route path="/cars/featured" element={<FeaturedCars />} />
+        <Route path="/cars/popular" element={<PopularCars />} />
+        <Route path="/reviews" element={<AllReviews />} />
+        <Route path="/reviewform" element={<ReviewForm />} />
 
         {/* User Routes */}
         <Route element={<ProtectedRoute allowedRoles={["user"]} />}>
