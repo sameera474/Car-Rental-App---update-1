@@ -1,31 +1,22 @@
 // File: server/controllers/carController.js
-import Car from "../models/Car.js"; // Import Car only once
+import Car from "../models/Car.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Set up __dirname for ES Modules.
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// No need for __dirname in this file unless you need to process local files,
+// since we are now using GridFS storage.
 
-// Add new car with file upload support for main image and gallery images.
 export const addCar = async (req, res) => {
   try {
     const { body } = req;
-    const protocol = req.protocol;
-    const host = req.get("host");
+    // Instead of constructing a local URL, you can store the filename returned by multer.
+    // Your file will be stored in MongoDB GridFS in the "uploads" bucket.
+    const imageUrl =
+      req.files?.image && req.files.image[0]
+        ? `/files/${req.files.image[0].filename}` // URL endpoint to serve file
+        : body.imageUrl || "";
 
-    const requiredFields = ["brand", "model", "year", "pricePerDay", "mileage"];
-    const missingFields = requiredFields.filter((field) => !body[field]);
-    if (missingFields.length > 0) {
-      return res
-        .status(400)
-        .json({ message: `Missing fields: ${missingFields.join(", ")}` });
-    }
-    if (!req.files?.image && !body.imageUrl) {
-      return res.status(400).json({ message: "Main image is required" });
-    }
-
-    // Build car data using text fields and image(s) provided.
     const carData = {
       brand: body.brand,
       model: body.model,
@@ -36,19 +27,16 @@ export const addCar = async (req, res) => {
       doors: Number(body.doors || 5),
       transmission: body.transmission || "Manual",
       location: body.location || "Main Branch",
-      image: req.files?.image
-        ? `${protocol}://${host}/uploads/${req.files.image[0].filename}`
-        : body.imageUrl || "",
+      image: imageUrl,
       isAvailable: body.isAvailable !== "false",
       status: "active",
       category: body.category || "Economy",
       featured: body.featured === "true",
     };
 
-    // Process gallery files if provided.
     if (req.files?.gallery) {
       const galleryUrls = req.files.gallery.map(
-        (file) => `${protocol}://${host}/uploads/${file.filename}`
+        (file) => `/files/${file.filename}`
       );
       carData.gallery = galleryUrls;
     }
@@ -60,12 +48,13 @@ export const addCar = async (req, res) => {
     res.status(500).json({ message: error.message || "Error adding car" });
   }
 };
-
 export const updateCar = async (req, res) => {
   try {
     const { body } = req;
-    const protocol = req.protocol;
-    const host = req.get("host");
+    const imageUrl =
+      req.files?.image && req.files.image[0]
+        ? `/files/${req.files.image[0].filename}`
+        : body.imageUrl || "";
 
     const updates = {
       brand: body.brand,
@@ -77,9 +66,7 @@ export const updateCar = async (req, res) => {
       doors: Number(body.doors || 5),
       transmission: body.transmission || "Manual",
       location: body.location || "Main Branch",
-      image: req.files?.image
-        ? `${protocol}://${host}/uploads/${req.files.image[0].filename}`
-        : body.imageUrl || "",
+      image: imageUrl,
       isAvailable: true,
       status: "active",
       category: body.category || "Economy",
@@ -88,9 +75,9 @@ export const updateCar = async (req, res) => {
 
     if (req.files?.gallery) {
       const galleryUrls = req.files.gallery.map(
-        (file) => `${protocol}://${host}/uploads/${file.filename}`
+        (file) => `/files/${file.filename}`
       );
-      updates.gallery = galleryUrls; // Replace the existing gallery.
+      updates.gallery = galleryUrls;
     }
 
     const updatedCar = await Car.findByIdAndUpdate(req.params.id, updates, {
@@ -105,7 +92,6 @@ export const updateCar = async (req, res) => {
     res.status(500).json({ message: error.message || "Error updating car" });
   }
 };
-
 export const getAllCars = async (req, res) => {
   try {
     const cars = await Car.find().sort({ createdAt: -1 });
@@ -160,7 +146,6 @@ export const removeCar = async (req, res) => {
 
 export const getFeaturedCars = async (req, res) => {
   try {
-    // Find cars where the featured flag is set to true.
     const featuredCars = await Car.find({ featured: true });
     res.json(featuredCars);
   } catch (error) {
@@ -171,7 +156,6 @@ export const getFeaturedCars = async (req, res) => {
 
 export const getPopularCars = async (req, res) => {
   try {
-    // Example: sort by creation date descending and limit the results.
     const popularCars = await Car.find().sort({ createdAt: -1 }).limit(10);
     res.json(popularCars);
   } catch (error) {
@@ -182,7 +166,6 @@ export const getPopularCars = async (req, res) => {
 
 export const getCarCategories = async (req, res) => {
   try {
-    // Return a static list of categories.
     const categories = ["Economy", "SUV", "Luxury", "Convertible", "Van"];
     res.json(categories);
   } catch (error) {

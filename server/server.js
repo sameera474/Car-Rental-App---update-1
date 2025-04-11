@@ -1,4 +1,4 @@
-// File: server.js
+// File: server/server.js
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
@@ -11,11 +11,13 @@ import rentalRoutes from "./routes/rentalRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import bossRoutes from "./routes/bossRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import fileRoutes from "./routes/fileRoutes.js"; // Import file serving routes
 import path from "path";
 import { fileURLToPath } from "url";
 
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 // Connect Database
 connectDB();
 
@@ -31,6 +33,7 @@ app.use("/api/rentals", rentalRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/boss", bossRoutes);
 app.use("/api/admin", adminRoutes);
+// Serve files from GridFS via /uploads/:filename
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Global error handling

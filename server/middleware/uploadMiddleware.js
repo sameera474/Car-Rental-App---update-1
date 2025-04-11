@@ -1,18 +1,20 @@
-// File: server/middleware/uploadMiddleware.js
 import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 
-// Determine __dirname for ES modules
+// Determine __dirname for ES modules.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Set up upload directory.
 const uploadDir = path.join(__dirname, "../uploads");
 
-// Create the uploads directory if it doesn't exist
+// Create the uploads directory if it doesn't exist.
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Define the storage configuration for local disk.
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -23,6 +25,7 @@ const storage = multer.diskStorage({
   },
 });
 
+// (Optional) Define file filter to allow images only.
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
@@ -31,17 +34,16 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-/*
-  We want to accept both:
-    - a single file for the "image" field (the main image)
-    - up to 10 files for the "gallery" field (additional images)
-  The following returns a middleware that processes both fields.
-*/
+// Create the multer upload middleware. We want to accept:
+//   - a single file for the "image" field (main image)
+//   - up to 10 files for the "gallery" field (additional images)
 export const uploadCarFiles = multer({
   storage,
-  fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB file size limit
+  fileFilter, // include if you want validation by mime type
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit per file
 }).fields([
   { name: "image", maxCount: 1 },
   { name: "gallery", maxCount: 10 },
 ]);
+
+// No default export here.
