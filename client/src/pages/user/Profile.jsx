@@ -1,3 +1,4 @@
+// File: client/src/pages/user/Profile.jsx
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -10,7 +11,7 @@ import {
   Avatar,
 } from "@mui/material";
 import axiosInstance from "../../services/axiosInstance";
-import CropperDialog from "../../components/CropperDialog";
+import CropperDialog from "../../components/CropperDialog"; // Assume you have a cropper dialog
 
 const UserProfile = () => {
   const [profile, setProfile] = useState({
@@ -42,7 +43,7 @@ const UserProfile = () => {
     fetchProfile();
   }, []);
 
-  // Clean up Blob URL if necessary
+  // Clean up Blob URL when unmounting
   useEffect(() => {
     return () => {
       if (avatarPreview && avatarPreview.startsWith("blob:")) {
@@ -58,7 +59,6 @@ const UserProfile = () => {
   const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Create a temporary Blob URL for preview
       setAvatarFile(file);
       const previewURL = URL.createObjectURL(file);
       setAvatarPreview(previewURL);
@@ -66,11 +66,11 @@ const UserProfile = () => {
     }
   };
 
-  // Called from CropperDialog when cropping is finished.
+  // Called when the crop is complete. You may want to convert the cropped area into a file.
   const handleCropComplete = (croppedImageURL) => {
     setAvatarPreview(croppedImageURL);
-    // Optionally, if you want to convert the cropped image URL to a File/Blob to upload,
-    // you can do that here. For simplicity, we'll rely on avatarFile.
+    // Optionally update avatarFile by converting the cropped image URL into a File/Blob.
+    setOpenCropper(false);
   };
 
   const handleSave = async (e) => {
@@ -78,19 +78,20 @@ const UserProfile = () => {
     setLoading(true);
     setError("");
     setSuccessMsg("");
+
     try {
+      // We use FormData because we need to send a file.
       const formData = new FormData();
       formData.append("name", profile.name);
       formData.append("email", profile.email);
       formData.append("phone", profile.phone);
-      // Append the avatar file if one is selected.
+      // Append avatar file if one was selected.
       if (avatarFile) {
         formData.append("avatar", avatarFile);
       }
       const { data } = await axiosInstance.put("/users/profile", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      // Assuming the backend returns { user, token }
       setProfile(data.user);
       setSuccessMsg("Profile updated successfully!");
     } catch (err) {
@@ -119,6 +120,7 @@ const UserProfile = () => {
             Change Profile Picture
             <input
               type="file"
+              name="avatar"
               hidden
               accept="image/*"
               onChange={handleAvatarSelect}
@@ -136,7 +138,7 @@ const UserProfile = () => {
           </Alert>
         )}
         <Paper sx={{ p: 2 }}>
-          <Box component="form" onSubmit={handleSave}>
+          <form onSubmit={handleSave}>
             <TextField
               fullWidth
               label="Name"
@@ -182,7 +184,7 @@ const UserProfile = () => {
                 Cancel
               </Button>
             </Box>
-          </Box>
+          </form>
         </Paper>
       </Box>
       {/* Cropper Dialog */}

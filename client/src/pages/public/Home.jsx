@@ -28,6 +28,7 @@ const Home = () => {
   const [testimonials, setTestimonials] = useState([]);
   const [error, setError] = useState("");
 
+  // Slider settings for vehicles (used for both Featured and Popular Vehicles)
   const vehicleSliderSettings = {
     dots: true,
     infinite: true,
@@ -42,6 +43,7 @@ const Home = () => {
     ],
   };
 
+  // Slider settings for testimonials
   const testimonialSliderSettings = {
     dots: true,
     infinite: true,
@@ -53,6 +55,7 @@ const Home = () => {
     responsive: [{ breakpoint: 960, settings: { slidesToShow: 1 } }],
   };
 
+  // Fetch data for featured vehicles, popular vehicles, categories, and recent reviews.
   const fetchHomeData = async () => {
     try {
       const [featuredRes, popularRes, categoriesRes, recentReviewsRes] =
@@ -63,6 +66,7 @@ const Home = () => {
           axiosInstance.get("/reviews/recent"),
         ]);
 
+      // Remove vehicles from featured that also appear in popular (if desired).
       const popularIDs = new Set(popularRes.data.map((car) => car._id));
       const filteredFeatured = featuredRes.data.filter(
         (car) => !popularIDs.has(car._id)
@@ -253,7 +257,7 @@ const Home = () => {
                 >
                   <Avatar
                     src={
-                      testimonial.avatar ||
+                      testimonial.user?.avatar ||
                       "https://via.placeholder.com/60?text=Avatar"
                     }
                     sx={{ width: 60, height: 60, mb: 2 }}
@@ -272,7 +276,7 @@ const Home = () => {
                     {testimonial.comment}
                   </Typography>
                   <Typography variant="subtitle2">
-                    — {testimonial.name}
+                    — {testimonial.user?.name || testimonial.name}
                   </Typography>
                 </Paper>
               </Box>

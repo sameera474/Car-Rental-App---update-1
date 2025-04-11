@@ -1,3 +1,4 @@
+// File: server/controllers/userController.js
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../utils/authUtils.js";
@@ -20,18 +21,19 @@ export const updateUserProfile = async (req, res) => {
       phone: req.body.phone,
     };
 
+    // If an avatar file is uploaded, update the avatar field.
     if (req.file) {
       const protocol = req.protocol;
       const host = req.get("host");
-      updates.avatar = `${protocol}://${host}/uploads/${req.file.filename}`;
-    } else if (req.body.avatar) {
-      // If you're sending an existing URL from the client.
-      updates.avatar = req.body.avatar;
+      // Save a complete public URL (e.g. https://yourdomain.com/uploads/avatars/filename)
+      updates.avatar = `${protocol}://${host}/uploads/avatars/${req.file.filename}`;
     }
+
     const user = await User.findByIdAndUpdate(req.user._id, updates, {
       new: true,
       runValidators: true,
     }).select("-password");
+
     if (!user) return res.status(404).json({ message: "User not found" });
     const token = generateToken(user._id, user.role);
     res.json({ user, token });
@@ -39,6 +41,8 @@ export const updateUserProfile = async (req, res) => {
     res.status(500).json({ message: "Error updating profile" });
   }
 };
+
+// The remainder of your functions (getUserById, getAllUsers, etc.) remain unchanged.
 
 export const getUserById = async (req, res) => {
   try {
